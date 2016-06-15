@@ -1077,6 +1077,20 @@ var FEDX = new Fedx();
 
 // FEDX.init();
 
+function _path(f, c) {
+    var _Path = f;
+    var _PathP = _Path.split(path.sep).indexOf('postcss');
+    _Path[_PathP] = c;
+    console.log(_Path)
+    console.log(_PathP)
+    _Path = path.join(path.sep);
+    if (c == 'css') {
+        return _Path;
+    } else {
+
+        return _Path;
+    }
+}
 
 FEDX.isExist('local', 'fedxConfig.json')
     .then(function(existInfo) {
@@ -1085,119 +1099,19 @@ FEDX.isExist('local', 'fedxConfig.json')
             configInfo: FEDX.fsReadFile(existInfo.path)
         }
     }).then(function(value) {
-        var absPath = ['rootPath', 'htmlPath', 'cssPath', 'postcssPath', 'imagesPath'],
-            dir = ['root', 'html', 'css', 'postcss', 'images'];
-        // color.FLOW('绝对路径配置不存在，正在计算')
-
-        var r,
-            xx = process.cwd().split(path.sep);
-        xx = xx.slice(xx.length - 1, xx.length).join('');
-        if (value.configInfo.mode) {
-            r = process.cwd();
-            value.configInfo.rootPath = xx;
-        } else {
-            // console.log('ccc')
-            var cc = process.cwd().split(path.sep);
-            // r = cc.slice(0, cc.indexOf(value.configInfo.name) + 1).join(path.sep);
-            r = cc.slice(0, cc.indexOf(value.configInfo.rootPath) + 1).join(path.sep);
-            // r = value.configInfo.rootPath;
-            console.log(r)
+        if (value.mode) {
+            console.log('zzzzz')
         }
-        // color.FLOW('独立模式')
-        var mo = value.configInfo.mode;
-        rd.each(r, function(f, s, next) {
-            if (path.extname(f) == '') {
-                // console.log(f)
-            }
-            if (f.indexOf('node_modules') == -1) {
+        chokidar.watch('/Users/iuunhao/Desktop/Github/fedx-test/FEDX', { ignored: /[\/\\]\./ }).on('all', (event, f) => {
+            if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
+                var _pathObj = {
+                    _cssPath: _path(f, 'css'),
+                    _imgPath: _path(f, 'images')
 
-                for (var i in absPath) {
-                    switch (path.basename(f)) {
-                        case value.configInfo.rootPath:
-                            if (mo) {
-                                value.configInfo.rootAbsolute = f;
-                            } else {
-                                value.configInfo.rootAbsolute = 'null'
-                            }
-                            dir[0] = 'null';
-                            break;
-                        case value.configInfo.htmlPath:
-                            if (mo) {
-                                value.configInfo.htmlAbsolute = f;
-                            } else {
-                                path.join(f, value.configInfo.name)
-                                value.configInfo.htmlAbsolute = path.join(f, value.configInfo.name)
-                            }
-                            dir[1] = 'null';
-                            break;
-                        case value.configInfo.cssPath:
-                            if (mo) {
-                                value.configInfo.cssAbsolute = f;
-                            } else {
-                                value.configInfo.cssAbsolute = path.join(f, value.configInfo.name)
-                            }
-
-                            dir[2] = 'null';
-                            break;
-                        case value.configInfo.postcssPath:
-                            if (mo) {
-                                value.configInfo.postcssAbsolute = f
-                            } else {
-                                value.configInfo.postcssAbsolute = path.join(f, value.configInfo.name);
-                            }
-
-                            dir[3] = 'null';
-                            break;
-                        case value.configInfo.imagesPath:
-                            if (mo) {
-                                value.configInfo.imagesAbsolute = f
-                            } else {
-                                value.configInfo.imagesAbsolute = path.join(f, value.configInfo.name);
-                            }
-                            dir[4] = 'null';
-                            break;
-                    }
                 }
-            }
-            next();
-        }, function(err) {
-            if (err) throw err;
-            var ccc = dir.every(function(item, index, array) {
-                return item == 'null';
-            });
-            if (ccc) {
-                flow('已计算出所需目录所有绝对路径');
-                writeFile(path.join(process.cwd(), 'fedxConfig.json'), value.configInfo);
-                flow('已将所有所需绝对路径写入本地配置文件中');
-            } else {
-                flow('存在不匹配目录！')
-                var str = '';
-                for (var n = 0; n < dir.length; n++) {
-                    if (dir[n] != 'null')
-                        str += '【 ' + dir[n] + ' 】';
-                }
-                console.log(color.red('[ERROR] ') + '没有找到' + color.red(str) + '目录。')
-                color.ERROR()
-                console.log(color.cyan('[TIPS] 解决方法：'))
-                console.log(color.cyan('       方案1：') + '你可以通过使用' + color.red('【 fedx - c 】') + '来完成设置配置。')
-                console.log(color.cyan('       方案2：') + '你可以通过查看帮助' + color.red('【 fedx - h 】') + '单独设置目录。')
-            }
+                console.log(_pathObj)
 
-        });
-
-        return value.configInfo;
-    })
-    .then(function(value) {
-        chokidar.watch(value.postcssAbsolute, {
-            ignored: [
-                /node_modules/,
-                /temp/
-            ]
-        }).on('all', (event, f) => {
-            var cnn = path.basename(f);
-            var reg = new RegExp(/(^\.)|(~$)/),
-                reg2 = new RegExp(/^_/);
-            if (!reg.test(cnn) && path.extname(cnn) == '.css' && !reg2.test(cnn)) {
+                var cnn = path.basename(f);
                 var data = new Date(),
                     curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
                     curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
@@ -1212,8 +1126,8 @@ FEDX.isExist('local', 'fedxConfig.json')
                         precss,
                         replaceImgPath,
                         sprites({
-                            stylesheetPath: path.join(value.cssAbsolute),
-                            spritePath: value.imagesAbsolute,
+                            stylesheetPath: _pathObj._cssPath,
+                            spritePath: _pathObj._imgPath,
                             spritesmith: {
                                 padding: 5
                             },
@@ -1298,16 +1212,9 @@ FEDX.isExist('local', 'fedxConfig.json')
                         // clean,
                     ];
                     postcss(processors)
-                        .process(st, { from: f, to: path.join(value.cssAbsolute, cnn) })
+                        .process(st, { from: f, to: path.join(_pathObj._cssPath, cnn) })
                         .then(function(result) {
-                            flow('处理完成')
-                            fs.writeFileSync(path.join(value.cssAbsolute, cnn), result.css);
-                            flow('已成功写入' + path.join(value.cssAbsolute, cnn), result.css)
-                            flow('计时结束')
-                            var diff = process.hrtime(time);
-                            var timer = Math.ceil((time[1]) / 1e7);
-                            flow('处理用时：' + timer + 'ms');
-                            timer = timer + color.yellow('ms')
+                            fs.writeFileSync(path.join(_pathObj._cssPath, cnn), result.css);
                             console.log(color.green('[WATCH] ') + color.cyan(f) + ' ' + color.green(timer));
                         }, function(error) {
                             console.log(color.red('[' + 'ERROR' + ']：'))
@@ -1317,8 +1224,10 @@ FEDX.isExist('local', 'fedxConfig.json')
                         }).catch();
                 });
                 // browserFn();
+
             }
         });
+
     })
 
 // 生成项目文件列表
@@ -1379,14 +1288,3 @@ function cPList() {
 }
 
 // cPList()
-
-
-
-function add(){
-    console.log('.')
-    fs.open('.', 'r', function(err, fd) {
-        // got fd file descriptor
-    });
-}
-
-add();
