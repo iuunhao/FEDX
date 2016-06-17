@@ -1079,12 +1079,12 @@ var FEDX = new Fedx();
 
 function _path(f, c) {
     var _Path = f;
-    var _PathP = _Path.split(path.sep).indexOf('postcss');
-    _Path[_PathP] = c;
-    console.log(_Path)
-    console.log(_PathP)
+    var _PathP = f.split(path.sep);
+    var lk = _PathP.indexOf('postcss');
+    _Path[lk] = c;
     _Path = path.join(path.sep);
     if (c == 'css') {
+        console.log(_Path)
         return _Path;
     } else {
 
@@ -1102,16 +1102,29 @@ FEDX.isExist('local', 'fedxConfig.json')
         if (value.mode) {
             console.log('zzzzz')
         }
-        chokidar.watch('/Users/iuunhao/Desktop/Github/fedx-test/FEDX', { ignored: /[\/\\]\./ }).on('all', (event, f) => {
+        var roop = process.cwd();
+        var roop2 = roop.split(path.sep);
+        var roopl = roop2.indexOf('FEDX') + 1;
+        var broo = roop2.slice(0, roopl).join(path.sep);
+        chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
             if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
-                var _pathObj = {
-                    _cssPath: _path(f, 'css'),
-                    _imgPath: _path(f, 'images')
+                var ff = path.dirname(f);
+                var _css = ff.split(path.sep);
+                var _css2 = _css.indexOf('postcss');
+                _css[_css2] = 'css';
+                _css = _css.slice(0, _css.length -1)
+                var _cssPath = _css.join(path.sep);
 
-                }
-                console.log(_pathObj)
 
-                var cnn = path.basename(f);
+                var _img = f.split(path.sep);
+                var _img2 = _img.indexOf('postcss');
+                _css[_img2] = 'images';
+                var _imgPath = _img.join(path.sep);
+                var cnn1 = path.basename(f);
+                var cnn2 = cnn1.split(path.extname(cnn));
+                var cnn = cnn2[0]+ '_v1.0.1' + path.extname(cnn1);
+
+
                 var data = new Date(),
                     curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
                     curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
@@ -1126,8 +1139,8 @@ FEDX.isExist('local', 'fedxConfig.json')
                         precss,
                         replaceImgPath,
                         sprites({
-                            stylesheetPath: _pathObj._cssPath,
-                            spritePath: _pathObj._imgPath,
+                            stylesheetPath: _cssPath,
+                            spritePath: _imgPath,
                             spritesmith: {
                                 padding: 5
                             },
@@ -1192,7 +1205,7 @@ FEDX.isExist('local', 'fedxConfig.json')
                         }),
                         pxtorem,
                         // mobilepx2,
-                        // cssnano,
+                        cssnano,
                         postcssMedia,
                         cssMqpacker({
                             sort: function(a, b) {
@@ -1212,9 +1225,10 @@ FEDX.isExist('local', 'fedxConfig.json')
                         // clean,
                     ];
                     postcss(processors)
-                        .process(st, { from: f, to: path.join(_pathObj._cssPath, cnn) })
+                        .process(st, { from: f, to: path.join(_cssPath, cnn) })
                         .then(function(result) {
-                            fs.writeFileSync(path.join(_pathObj._cssPath, cnn), result.css);
+                            console.log(_cssPath)
+                            fs.writeFileSync(path.join(_cssPath, cnn), result.css);
                             console.log(color.green('[WATCH] ') + color.cyan(f) + ' ' + color.green(timer));
                         }, function(error) {
                             console.log(color.red('[' + 'ERROR' + ']：'))
