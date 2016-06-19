@@ -35,481 +35,11 @@ var program = require('commander'),
 
 var chokidar = require('chokidar');
 
-// promise代理函数
-// 读文件
-var fsReadFile = (file) => {
-    var s = readLine(fs.createReadStream(file), {
-        newline: '\n',
-        autoNext: true,
-        encoding: function(data) {
-            return JSON.parse(data);
-        }
-    });
-    s.on('data', function(data) {
-        Qd.resolve(data);
-        s.next();
-    });
-    return Qd.promise;
-}
-
-// fsReadFile('./fedxConfig.json').then((value) => {
-//     console.log(value)
-//     return value
-// }).then((value) =>{
-//     console.log(value)
-// })
-
-
-// 1查找文件 => 返回路径及其，查找结果
-// 2读取文件 => 判断结果，读取文件 => 返回配置信息
-// 3匹配路径 => 返回带绝对路径配置
-// 4处理文件 => 处理css => 返回配置信息
-// 5.
-
-
-// 写文件
-var fsWritFile = (file, data) => {
-        var s = writeLineStream(fs.createWriteStream(file), {
-            newline: '\n',
-            encoding: function(data) {
-                return JSON.stringify(data);
-            },
-            cacheLines: 0
-        });
-        s.write(data, function() {
-            Qd.resolve(data);
-        });
-        s.end();
-        return Qd.promise;
-    }
-    // 查找文件
-var listFile = (paths, type) => {
-    var fileArr = [];
-    if (type === undefined) type = ['']
-    rd.eachSync(paths, function(f, s) {
-        var filename = path.basename(f);
-        for (var m in type) {
-            if (m == '') type[m] = '';
-            if ((filename.indexOf(type[m]) != -1) && (filename != '')) {
-                var fileStat = {
-                    fileType: (function(f) {
-                        if (path.extname(f).slice(1, path.extname(f).length).toUpperCase() == '') {
-                            const Reg = new RegExp(/(^\.)|(~$)/)
-                            if (Reg.test(path.basename(f)))
-                                return '临时文件';
-                            else return '文件夹';
-                        } else {
-                            return path.extname(f).slice(1, path.extname(f).length).toUpperCase();
-                        }
-                    }(f)),
-                    fileName: path.basename(f),
-                    fileSize: s.size,
-                    fileIno: s.ino,
-                    fileAtime: s.atime.toLocaleString(),
-                    fileMtime: s.mtime.toLocaleString(),
-                    fileCtime: s.ctime.toLocaleString(),
-                    filePath: f
-                }
-                console.log(s)
-                fileArr.push(fileStat);
-                Qd.resolve(fileArr);
-            }
-        }
-    });
-    return Qd.promise;
-}
-
 // 流控制
 var flow = (str) => {
         if (flowCur == true)
             console.log(color.purple('[FLOW] >>> ' + str));
     }
-    // 查找绝对路径
-var getAbsolutePath = (root, fileName) => {
-    rd.each(root, function(f, s, next) {
-        if (path.basename(f) == fileName)
-            return f;
-        next();
-    }, function(err) {
-        if (err) throw err;
-        console.log(f)
-    });
-}
-
-
-var flg = true;
-var md = {};
-var getconfig = (confFile) => {
-        flow('开始读取配置信息')
-        fs.readFile(confFile, function(err, data) {
-            if (err) throw err;
-            var datajson = JSON.parse(data),
-                r,
-                xx = process.cwd().split(path.sep);
-            xx = xx.slice(xx.length - 1, xx.length).join('');
-            if (datajson.mode == true) {
-                r = process.cwd();
-                datajson.rootPath = xx;
-            } else {
-                var cc = process.cwd().split(path.sep);
-                r = cc.slice(0, cc.indexOf(datajson.rootPath) + 1).join(path.sep);
-            }
-            var kk = ['root', 'html', 'postcss', 'images', 'css'];
-            flow('检测目录结构是否与配置一致')
-            rd.each(r, function(f, s, next) {
-                switch (path.basename(f)) {
-                    case datajson.rootPath:
-                        if (datajson.mode == true) {
-                            md.rootAbsolute = process.cwd();
-                            datajson.rootAbsolute = process.cwd();
-                            kk[0] = 'null'
-                        }
-                        break;
-                    case datajson.htmlPath:
-                        md.htmlAbsolute = f;
-                        datajson.htmlAbsolute = f;
-                        kk[1] = 'null'
-                        break;
-                    case datajson.postcssPath:
-                        md.postcssAbsolute = f;
-                        datajson.postcssAbsolute = f;
-                        kk[2] = 'null'
-                        break;
-                    case datajson.imagesPath:
-                        md.imgAbsolute = f;
-                        datajson.imgAbsolute = f;
-                        kk[3] = 'null'
-                        break;
-                    case datajson.cssPath:
-                        md.cssAbsolute = f;
-                        datajson.cssAbsolute = f;
-                        kk[4] = 'null'
-                        break;
-                }
-                next();
-            }, function(err) {
-                flow('目录结构于配置一致')
-                if (err) throw err;
-                var ccc = kk.every(function(item, index, array) {
-                    return item == 'null';
-                });
-                flow('正在计算所需目录绝对路径');
-                if (ccc) {
-                    flow('已计算出所需目录所有绝对路径');
-                    writeFile(path.join(process.cwd(), 'fedxConfig.json'), datajson);
-                    flow('已将所有所需绝对路径写入本地配置文件中');
-                    (function() {
-                        if (flg) {
-                            handlePostcss({
-                                postcss: datajson.postcssAbsolute,
-                                css: datajson.cssAbsolute,
-                                img: datajson.imgAbsolute,
-                                imgMin: datajson.imgMinQuality,
-                                html: datajson.htmlAbsolute,
-                                root: datajson.rootAbsolute
-                            })
-                            flg = false;
-                        }
-                        rd.each(datajson.postcssAbsolute, function(f, s, next) {
-                            fs.watch(datajson.postcssAbsolute, function(event, filename) {
-                                if (filename) {
-                                    handlePostcss({
-                                        postcss: datajson.postcssAbsolute,
-                                        css: datajson.cssAbsolute,
-                                        img: datajson.imgAbsolute,
-                                        imgMin: datajson.imgMinQuality,
-                                        html: datajson.htmlAbsolute,
-                                        root: datajson.rootAbsolute
-                                    })
-                                }
-
-                            });
-                        })
-                    })()
-                } else {
-                    flow('目录结构于配置一致')
-                    flow('存在不匹配目录！')
-                    var str = '';
-                    for (var n = 0; n < kk.length; n++) {
-                        if (kk[n] != 'null')
-                            str += '【 ' + kk[n] + ' 】';
-                    }
-                    console.log(color.red('[ERROR] ') + '没有找到' + color.red(str) + '目录。')
-                    console.log(color.cyan('[TIPS] ') + '请重新设置目录使用' + color.red('【 fedx - c 】') + '完成设置！')
-                }
-            });
-        });
-    }
-    // // postcss处理
-    //
-
-// 自定义postcss函数函数函数函数
-function mobilepx2(css) {
-    flow('已开启移动端px单位除2功能')
-    css.walkRules(function(rule) {
-        rule.walkDecls(function(decl, i) {
-            decl.value = decl.value.replace(/(\d*\.?\d+)px/ig, function(str) {
-                return (parseFloat(str) / 2) + 'px';
-            })
-
-        })
-    });
-}
-
-// 自定义postcss插件rem
-function pxtorem(css) {
-    flow('已开启pm转换rem')
-    css.walkRules(function(rule) {
-        rule.walkDecls(function(decl, i) {
-            decl.value = decl.value.replace(/(\d*\.?\d+)pm/ig, function(str) {
-                return (parseFloat(str) / 100) + 'rem';
-            })
-        })
-    });
-}
-
-
-// 自定义postcss插件替换路径
-function replaceImgPath(css) {
-    flow('已开启postcss图片相对路径处理')
-    css.walkRules(function(rule) {
-        rule.walkDecls(function(decl, i) {
-            decl.value = decl.value.replace(/url\(.*\)/, function(str) {
-                str = 'url(' + abimg + '/' + str.slice(4, str.length - 1) + ')';
-                return str;
-            })
-        })
-    });
-}
-
-function postcssMedia(css) {
-    flow('已开启媒体查询识别功能')
-    css.walkRules(function(rule) {
-        rule.walkDecls(function(decl, i) {
-            if (rule.type === "atrule" || (rule.parent && rule.parent.type === "atrule")) {
-                var mv = rule.parent.params;
-                var mtv = {
-                    'iphone4': 'screen and (device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)',
-                    'iphone5': 'screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
-                    'iphone6': 'only screen and (min-device-width: 375px) and (max-device-width: 667px) and (orientation: portrait)',
-                    'iphone6p': 'only screen and (min-device-width: 414px) and (max-device-width: 736px) and (orientation: portrait)',
-                    'landscape': 'screen and (orientation: landscape)'
-                }
-                switch (mv) {
-                    case '(iphone4)':
-                        return rule.parent.params = mtv.iphone4;
-                        break;
-                    case '(iphone5)':
-                        return rule.parent.params = mtv.iphone5;
-                        break;
-                    case '(iphone6)':
-                        return rule.parent.params = mtv.iphone6;
-                        break;
-                    case '(iphone6p)':
-                        return rule.parent.params = mtv.iphone6p;
-                        break;
-                    case '(landscape)':
-                        return rule.parent.params = mtv.iphone4;
-                        break;
-                }
-            }
-        });
-    });
-}
-
-
-var cl = () => {
-        console.log(color.black('this text is black'))
-        console.log(color.red('this text is high-intensity red', true))
-        console.log(color.green('this text is green'))
-        console.log(color.yellow('this text is high-intensity yellow', true))
-        console.log(color.blue('this text is blue'))
-        console.log(color.purple('this text is purple'))
-        console.log(color.cyan('this text is cyan'))
-        console.log(color.white('this text is white'))
-    }
-    // cl()
-    //获取绝对路径
-var getabspath = () => {
-    var listValue = ['rootPath', 'htmlPath', 'postcssPath', 'imagesPath', 'cssPath'];
-    flow('查找配置文件')
-    fs.exists(path.join(process.cwd(), 'fedxConfig.json'), function(exists) {
-        if (exists) {
-            flow('找到本地配置文件')
-            getconfig(path.join(process.cwd(), 'fedxConfig.json'))
-        } else {
-            console.log(color.cyan('[TIPS]') + '你本地没有配置文件，将采用' + color.red('全局配置') + '！')
-            flow('读取全局配置')
-            getconfig(path.join(__dirname, '../template/config/fedxConfig.json'))
-        }
-    })
-}
-
-// 首次运行检测配置文件
-var checkConfig = () => {
-        var arr = rd.readSync(process.cwd(), function(err, files) {
-            if (err) throw err;
-            return files;
-        });
-
-        var t = 0;
-        for (var i = 0; i <= arr.length; i++) {
-            if (path.basename(arr[i]) != 'fedxConfig.json') {
-                if (t == arr.length) {
-                    console.log('当前项目没有找到配置文件，将读取原始配置文件')
-                }
-                t++;
-            } else {
-                console.log(color.cyan('[TIPS] ') + '在当前项目下找到配置文件，将读取配置信息')
-                var dir = path.join(path.dirname(arr[i]), 'list.rd')
-                console.log(redFileOne('./fedxConfig.json'))
-                    // writeFile(dir, redFile(arr[i]))
-                console.log(color.red(arr[i]))
-            }
-        }
-    }
-    // 打开浏览器，并且监听文件修改刷新浏览器
-var browserFn = (options) => {
-        var s = path.join(process.cwd());
-        var bs = require("browser-sync").create();
-        // var aa = fsReadFile('./fedxConfig.json');
-
-
-        // bs.watch(options.html + path.sep + '*.html').on("change", bs.reload);
-        // bs.watch('html/*.html').on("change", bs.reload);
-
-        // bs.watch('**/*.css', function (event, file) {
-        //     if (event === "change"){
-        //         bs.reload('**/*.css');
-        //     }
-        // });
-        // bs.init({
-        //     server: {
-        //         baseDir: './html',
-        //         directory: true
-        //     }
-        // })
-        // bs.watch(options.root + path.sep + '**/*.*', function (event, file) {
-        //     if (event === "change"){
-        //         bs.reload(options.root + path.sep + '**/*.*');
-        //     }
-        // });
-        // bs.init({
-        //     server: {
-        //         baseDir: options.html,
-        //         directory: true
-        //     }
-        // })
-    }
-    // browserFn();
-    // console.log(md)
-    // checkConfig()
-    // 检查网络是否连接
-var isNetWrok = () => {
-        if (http.STATUS_CODES[404] === 'Not Found') {
-            console.log(color.cyan('[TIPS] ') + '当前网络畅通，正在下载远程配置文件')
-                // getOrigin();
-        } else {
-            console.log(color.cyan('[TIPS] ') + '您的网络不畅通，将采用备份方式处理!')
-        }
-    }
-    // isNetWrok();
-
-// 写入远程配置
-var writeFile = (paths, datajson) => {
-    var s = writeLineStream(fs.createWriteStream(paths), {
-        newline: '\n',
-        encoding: function(data) {
-            return JSON.stringify(data);
-        },
-        cachelines: 0
-    });
-    s.write(datajson, function() {});
-    s.end(function() {});
-}
-
-
-// 检测配置文件是否存在
-var hasFile = (path, fileName, datajson) => {
-    var filePath = path.join(path, fileName);
-    var wp = path.join(__dirname, '../template/config/origin.json');
-    var wp2 = path.join(__dirname, '../template/config/origin_bak.json');
-    var arr = [];
-
-    fs.exists(filePath, function(exists) {
-        if (exists) {
-            prompt(color.cyan('你本地已经存在配置文件(C覆盖) || (B备份)：'), function(c) {
-                (function() {
-                    var fug = (c) => {
-                        if (c == 'C' || c == 'c' || c == '\n') {
-                            writeFile(wp, datajson)
-                            console.log(color.cyan('[TIPS] ') + '已覆盖配置文件！')
-                        } else {
-                            console.log(color.cyan('[TIPS] ') + '正在备份配置文件！')
-                            rd.each(path.join(__dirname, '../template/config/'), function(f, s, next) {
-                                var cc = path.basename(f, '.json');
-                                if (cc.indexOf('_bak_') != -1) {
-                                    var splitstr = cc.split('origin_bak_').join('');
-                                    arr.push(Number(splitstr))
-                                } else {
-                                    arr.push(Number(0))
-                                }
-                                next()
-                            }, function(err) {
-                                if (err) throw err;
-                                var maxBakfile = Math.max.apply(Math, arr),
-                                    returnFileName = 'origin_bak_' + (maxBakfile + 1) + '.json';
-                                fs.rename(wp, path.join(__dirname, '../template/config/' + returnFileName), function() {
-                                    console.log(color.cyan('[TIPS] ') + '文件已经备份：' + path.join(__dirname, '../template/config/' + returnFileName))
-                                    writeFile(wp, datajson)
-                                })
-                            });
-                        }
-                    }
-                })()
-            })
-        } else {
-            console.log(color.cyan('[TIPS] ') + '你本地没有配置文件正在写入！')
-            writeFile(wp, datajson)
-        }
-    });
-}
-
-
-
-// 读取远程配置
-var getOrigin = () => {
-    request('http://raw.githubusercontent.com/iuunhao/fedx/master/config.json', function(error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var datajson = JSON.parse(body);
-            hasFile(__dirname, '../template/config/origin.json', datajson)
-            console.log(color.cyan('[TIPS] ') + '读取完成!')
-        }
-    })
-}
-
-
-
-
-// 检测配置文件是否存在
-var hasFileTips = (paths, fileName, datajson) => {
-    var filePath = path.join(paths, fileName);
-    writeFile(filePath, datajson)
-    console.log(color.cyan('[TIPS] ') + '写入完成！')
-}
-
-// // 界面交互
-var prompt = (prompt, callback) => {
-    process.stdout.write(prompt);
-    process.stdin.resume();
-    process.stdin.setEncoding('utf8');
-    process.stdin.once('data', function(chunk) {
-        process.stdin.pause();
-        callback(chunk.trim());
-    });
-}
-
-
 // 创建目录
 var mkdirFn = () => {
     prompt(color.cyan('[INP]：') + '你是否要创建目录(y/n)：', (c) => {
@@ -603,112 +133,6 @@ var oneSet = (str, key, file) => {
 
 }
 
-// 配置默认设置;
-var configVal = {};
-
-var configSet = (key, value, file) => {
-    var dataJSON = {};
-    // if (file == 'global') {
-    //     file = path.join(__dirname, '../template/config/fedxConfig.json')
-    // } else {
-    //     file = path.join(process.cwd(), 'fedxConfig.json')
-    // }
-    file = path.join(__dirname, '../template/config/fedxConfig.json')
-    fs.readFile(file, function(err, data) {
-        dataJSON = JSON.parse(data);
-        if (value == '' || value == '\\n') {
-            configVal[key] = dataJSON[key];
-        } else {
-            switch (key) {
-                case 'debug':
-                case 'mode':
-                    if (value == 'y' || 'Y') {
-                        configVal[key] = true;
-                    } else {
-                        configVal[key] = false;
-                    }
-                    break;
-                case 'gitignore':
-                    if (value == '' || value == '\\n') {
-                        configVal[key] = [
-                            "node_modules",
-                            ".DS_Store",
-                            "npm-debug.log"
-                        ]
-                    } else {
-                        configVal[key] = value.split(',')
-                    }
-                default:
-                    configVal[key] = value;
-                    break;
-            }
-        }
-    });
-}
-
-var confAll = (file) => {
-    var fc;
-    if (file == 'global') {
-        flow('开始配置全局配置文件');
-        fc = path.join(__dirname, '../template/config/fedxConfig.json')
-    } else {
-        flow('开始配置本地配置文件');
-        fc = path.join(process.cwd(), 'fedxConfig.json')
-    }
-    prompt(color.purple('[INP]') + color.cyan('您的项目名称(FEDX)：'), function(c) {
-        configSet('name', c, file)
-        prompt(color.purple('[INP]') + color.cyan('是否为独立模式(y/n)：'), function(c) {
-            configSet('mode', c, file)
-            prompt(color.purple('[INP]') + color.cyan('你的项目根目录(.)：'), function(c) {
-                configSet('rootPath', c, file)
-                prompt(color.purple('[INP]') + color.cyan('图片目录(images)：'), function(c) {
-                    configSet('imagesPath', c, file)
-                    prompt(color.purple('[INP]') + color.cyan('postcss目录(postcss)：'), function(c) {
-                        configSet('postcssPath', c, file)
-                        prompt(color.purple('[INP]') + color.cyan('Jade模版目录(jade)：'), function(c) {
-                            configSet('jadePath', c, file)
-                            prompt(color.purple('[INP]') + color.cyan('Sprites前缀名称(icon)：'), function(c) {
-                                configSet('spriteMark', c, file)
-                                prompt(color.purple('[INP]') + color.cyan('css输出目录(css)：'), function(c) {
-                                    configSet('cssPath', c, file)
-                                    prompt(color.purple('[INP]') + color.cyan('html目录(html)：'), function(c) {
-                                        configSet('htmlPath', c, file)
-                                        prompt(color.purple('[INP]') + color.cyan('图片压缩质量(0-100)：'), function(c) {
-                                            configSet('imgmin', c, file)
-                                            prompt(color.purple('[INP]') + color.cyan('git过滤文件：'), function(c) {
-                                                configSet('gitignore', c, file)
-                                                console.log(configVal)
-                                                var s = writeLineStream(fs.createWriteStream(fc), {
-                                                    newline: '\n',
-                                                    encoding: function(data) {
-                                                        return JSON.stringify(data);
-                                                    },
-                                                    cachelines: 0
-                                                });
-                                                s.write(configVal, function() {});
-                                                s.end(function() {});
-                                                hasFileTips('.', 'fedxConfig.json', configVal)
-                                                mkdirFn();
-                                            })
-                                        })
-                                    })
-                                })
-                            })
-                        })
-                    })
-                })
-            })
-        })
-    })
-}
-
-var selProject = (c) => {
-    var p = ['mobile', 'desktop'];
-    if (!c || isNaN(c)) {
-        prompt('项目类型(根目录) 1: mobile, 2: desktop : ', selProject);
-        return false;
-    }
-}
 
 
 
@@ -1006,11 +430,7 @@ var color = {
     // 功能重写
 
 
-var Fedx = function(option) {
-    // return {
-    //     init: this.init()
-    // }
-};
+var Fedx = function(option) {};
 
 // 工具方法
 // 判断文件是否存在
@@ -1090,6 +510,80 @@ function _path(f, c) {
 
         return _Path;
     }
+}
+
+// 自定义postcss函数函数函数函数
+function mobilepx2(css) {
+    flow('已开启移动端px单位除2功能')
+    css.walkRules(function(rule) {
+        rule.walkDecls(function(decl, i) {
+            decl.value = decl.value.replace(/(\d*\.?\d+)px/ig, function(str) {
+                return (parseFloat(str) / 2) + 'px';
+            })
+
+        })
+    });
+}
+
+// 自定义postcss插件rem
+function pxtorem(css) {
+    flow('已开启pm转换rem')
+    css.walkRules(function(rule) {
+        rule.walkDecls(function(decl, i) {
+            decl.value = decl.value.replace(/(\d*\.?\d+)pm/ig, function(str) {
+                return (parseFloat(str) / 100) + 'rem';
+            })
+        })
+    });
+}
+
+
+// 自定义postcss插件替换路径
+function replaceImgPath(css) {
+    flow('已开启postcss图片相对路径处理')
+    css.walkRules(function(rule) {
+        rule.walkDecls(function(decl, i) {
+            decl.value = decl.value.replace(/url\(.*\)/, function(str) {
+                str = 'url(' + abimg + '/' + str.slice(4, str.length - 1) + ')';
+                return str;
+            })
+        })
+    });
+}
+
+function postcssMedia(css) {
+    flow('已开启媒体查询识别功能')
+    css.walkRules(function(rule) {
+        rule.walkDecls(function(decl, i) {
+            if (rule.type === "atrule" || (rule.parent && rule.parent.type === "atrule")) {
+                var mv = rule.parent.params;
+                var mtv = {
+                    'iphone4': 'screen and (device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)',
+                    'iphone5': 'screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
+                    'iphone6': 'only screen and (min-device-width: 375px) and (max-device-width: 667px) and (orientation: portrait)',
+                    'iphone6p': 'only screen and (min-device-width: 414px) and (max-device-width: 736px) and (orientation: portrait)',
+                    'landscape': 'screen and (orientation: landscape)'
+                }
+                switch (mv) {
+                    case '(iphone4)':
+                        return rule.parent.params = mtv.iphone4;
+                        break;
+                    case '(iphone5)':
+                        return rule.parent.params = mtv.iphone5;
+                        break;
+                    case '(iphone6)':
+                        return rule.parent.params = mtv.iphone6;
+                        break;
+                    case '(iphone6p)':
+                        return rule.parent.params = mtv.iphone6p;
+                        break;
+                    case '(landscape)':
+                        return rule.parent.params = mtv.iphone4;
+                        break;
+                }
+            }
+        });
+    });
 }
 
 FEDX.isExist('local', 'fedxConfig.json')
