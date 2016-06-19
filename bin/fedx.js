@@ -1121,7 +1121,8 @@ FEDX.isExist('local', 'fedxConfig.json')
                 _css[_img2] = 'images';
                 var _imgPath = _img.join(path.sep);
                 var cnn1 = path.basename(f);
-                var cnn2 = cnn1.split(path.extname(cnn));
+                var cnn2 = cnn1.split('.css');
+                console.log(cnn2)
                 var cnn = cnn2[0]+ '_v1.0.1' + path.extname(cnn1);
 
 
