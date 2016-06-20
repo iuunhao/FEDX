@@ -37,9 +37,9 @@ var chokidar = require('chokidar');
 
 // 流控制
 var flow = (str) => {
-        if (flowCur == true)
-            console.log(color.purple('[FLOW] >>> ' + str));
-    }
+    if (flowCur == true)
+        console.log(color.purple('[FLOW] >>> ' + str));
+}
 // 创建目录
 var mkdirFn = () => {
     prompt(color.cyan('[INP]：') + '你是否要创建目录(y/n)：', (c) => {
@@ -166,84 +166,84 @@ program
     .parse(process.argv);
 
 switch (program.rawArgs[program.rawArgs.length - 1]) {
-    case '-r':
-        oneSet(color.red('[INP]') + '设置本地项目根目录(.)', 'rootPath', 'local')
-        break;
-    case '-R':
-        oneSet(color.red('[INP]') + '设置全局项目根目录(.)', 'rootPath', 'global')
-        break;
-    case '-a':
-        oneSet(color.red('[INP]') + '设置本地项目根目录(.)', 'name', 'local')
-        break;
-    case '-A':
-        oneSet(color.red('[INP]') + '设置全局项目根目录(.)', 'name', 'global')
-        break;
-    case '-c':
-        confAll('local');
-        break;
-    case '-C':
-        confAll('global');
-        break;
-    case '-t':
-        oneSet(color.red('[INP]') + '设置本地html目录(html)', 'htmlPath', 'local')
-        break;
-    case '-T':
-        oneSet(color.red('[INP]') + '设置全局html目录(html)', 'htmlPath', 'global')
-        break;
-    case '-i':
-        oneSet(color.red('[INP]') + '设置本地images目录(images)', 'imagesPath', 'local')
-        break;
-    case '-I':
-        oneSet(color.red('[INP]') + '设置全局images目录(images)', 'imagesPath', 'global')
-        break;
-    case '-j':
-        oneSet(color.red('[INP]') + '设置本地Jade目录(jade)', 'jadePath', 'local')
-        break;
-    case '-J':
-        oneSet(color.red('[INP]') + '设置全局Jade目录(jade)', 'jadePath', 'global')
-        break;
-    case '-s':
-        oneSet(color.red('[INP]') + '设置本地css输出目录(css)', 'cssPath', 'local')
-        break;
-    case '-S':
-        oneSet(color.red('[INP]') + '设置全局css输出目录(css)', 'cssPath', 'global')
-        break;
-    case '-p':
-        oneSet(color.red('[INP]') + '设置本地postcss目录(postcss)', 'postcssPath', 'local')
-        break;
-    case '-P':
-        oneSet(color.red('[INP]') + '设置全局postcss目录(postcss)', 'postcssPath', 'global')
-        break;
-    case '-d':
-        oneSet(color.red('[INP]') + '设置本地debug模式(y/n)', 'debug', 'local')
-        break;
-    case '-D':
-        oneSet(color.red('[INP]') + '设置全局debug模式(y/n)', 'debug', 'global')
-        break;
-    case '-e':
-        oneSet(color.red('[INP]') + '设置本地sprite前缀(icon)', 'sprite', 'local')
-        break;
-    case '-E':
-        oneSet(color.red('[INP]') + '设置全局sprite前缀(icon)', 'sprite', 'global')
-        break;
-    case '-n':
-        oneSet(color.red('[INP]') + '设置本地图片压缩质量(0-100)', 'imgmin', 'local')
-        break;
-    case '-N':
-        oneSet(color.red('[INP]') + '设置全局图片压缩质量(0-100)', 'imgmin', 'global')
-        break;
-    case '-m':
-        oneSet(color.red('[INP]') + '设置本地运行模式(y/n)', 'mode', 'local')
-        break;
-    case '-M':
-        oneSet(color.red('[INP]') + '设置全局运行模式(y/n)', 'mode', 'global')
-        break;
-    case '-g':
-        mkdirFn();
-        break;
-    default:
-        // getabspath();
-        break;
+case '-r':
+    oneSet(color.red('[INP]') + '设置本地项目根目录(.)', 'rootPath', 'local')
+    break;
+case '-R':
+    oneSet(color.red('[INP]') + '设置全局项目根目录(.)', 'rootPath', 'global')
+    break;
+case '-a':
+    oneSet(color.red('[INP]') + '设置本地项目根目录(.)', 'name', 'local')
+    break;
+case '-A':
+    oneSet(color.red('[INP]') + '设置全局项目根目录(.)', 'name', 'global')
+    break;
+case '-c':
+    confAll('local');
+    break;
+case '-C':
+    confAll('global');
+    break;
+case '-t':
+    oneSet(color.red('[INP]') + '设置本地html目录(html)', 'htmlPath', 'local')
+    break;
+case '-T':
+    oneSet(color.red('[INP]') + '设置全局html目录(html)', 'htmlPath', 'global')
+    break;
+case '-i':
+    oneSet(color.red('[INP]') + '设置本地images目录(images)', 'imagesPath', 'local')
+    break;
+case '-I':
+    oneSet(color.red('[INP]') + '设置全局images目录(images)', 'imagesPath', 'global')
+    break;
+case '-j':
+    oneSet(color.red('[INP]') + '设置本地Jade目录(jade)', 'jadePath', 'local')
+    break;
+case '-J':
+    oneSet(color.red('[INP]') + '设置全局Jade目录(jade)', 'jadePath', 'global')
+    break;
+case '-s':
+    oneSet(color.red('[INP]') + '设置本地css输出目录(css)', 'cssPath', 'local')
+    break;
+case '-S':
+    oneSet(color.red('[INP]') + '设置全局css输出目录(css)', 'cssPath', 'global')
+    break;
+case '-p':
+    oneSet(color.red('[INP]') + '设置本地postcss目录(postcss)', 'postcssPath', 'local')
+    break;
+case '-P':
+    oneSet(color.red('[INP]') + '设置全局postcss目录(postcss)', 'postcssPath', 'global')
+    break;
+case '-d':
+    oneSet(color.red('[INP]') + '设置本地debug模式(y/n)', 'debug', 'local')
+    break;
+case '-D':
+    oneSet(color.red('[INP]') + '设置全局debug模式(y/n)', 'debug', 'global')
+    break;
+case '-e':
+    oneSet(color.red('[INP]') + '设置本地sprite前缀(icon)', 'sprite', 'local')
+    break;
+case '-E':
+    oneSet(color.red('[INP]') + '设置全局sprite前缀(icon)', 'sprite', 'global')
+    break;
+case '-n':
+    oneSet(color.red('[INP]') + '设置本地图片压缩质量(0-100)', 'imgmin', 'local')
+    break;
+case '-N':
+    oneSet(color.red('[INP]') + '设置全局图片压缩质量(0-100)', 'imgmin', 'global')
+    break;
+case '-m':
+    oneSet(color.red('[INP]') + '设置本地运行模式(y/n)', 'mode', 'local')
+    break;
+case '-M':
+    oneSet(color.red('[INP]') + '设置全局运行模式(y/n)', 'mode', 'global')
+    break;
+case '-g':
+    mkdirFn();
+    break;
+default:
+    // getabspath();
+    break;
 }
 
 
@@ -329,37 +329,37 @@ function nextFn(arr) {
     var item = arr[0];
     prompt(item.text, function(c) {
         switch (item.type) {
-            case 'boolean':
-                if (c == 'Y' || c == 'y' || c == '') {
-                    item.succ(item.key, true);
-                    arr.shift();
-                } else {
-                    item.succ(item.key, false);
-                    arr.shift();
-                }
-                break;
-            case 'dirname':
-                item.succ(item.key, c);
+        case 'boolean':
+            if (c == 'Y' || c == 'y' || c == '') {
+                item.succ(item.key, true);
                 arr.shift();
-                break;
-            case 'number':
-                if (!isNaN(c)) {
-                    if (c >= 100 || c == 0) {
-                        item.succ(item.key, 100);
-                        arr.shift();
-                    } else if (c <= 50) {
-                        item.succ(item.key, 50);
-                        arr.shift();
-                    } else {
-                        item.succ(item.key, c);
-                        arr.shift();
-                    }
+            } else {
+                item.succ(item.key, false);
+                arr.shift();
+            }
+            break;
+        case 'dirname':
+            item.succ(item.key, c);
+            arr.shift();
+            break;
+        case 'number':
+            if (!isNaN(c)) {
+                if (c >= 100 || c == 0) {
+                    item.succ(item.key, 100);
+                    arr.shift();
+                } else if (c <= 50) {
+                    item.succ(item.key, 50);
+                    arr.shift();
                 } else {
-                    console.log('请输出数字类型参数')
+                    item.succ(item.key, c);
+                    arr.shift();
                 }
-                break;
-            case 'version':
-                break;
+            } else {
+                console.log('请输出数字类型参数')
+            }
+            break;
+        case 'version':
+            break;
         }
         arg.callee(arr);
     })
@@ -372,62 +372,62 @@ var set = {
 
 // color
 var color = {
-        COLORVALUE: {
-            RED: '\033[0;31m',
-            GREEN: '\033[0;32m',
-            YELLOW: '\033[0;33m',
-            BLUE: '\033[0;34m',
-            PURPLE: '\033[0;35m',
-            CYAN: '\033[0;36m',
-            BLACK: '\033[0;30m',
-            WHITE: '\033[0;37m',
-        },
-        red: function(str) {
-            return this.COLORVALUE.RED + str + '\033[0m'
-        },
-        blue: function(str) {
-            return this.COLORVALUE.BLUE + str + '\033[0m'
-        },
-        green: function(str) {
-            return this.COLORVALUE.GREEN + str + '\033[0m'
-        },
-        yellow: function(str) {
-            return this.COLORVALUE.YELLOW + str + '\033[0m'
-        },
-        cyan: function(str) {
-            return this.COLORVALUE.CYAN + str + '\033[0m'
-        },
-        purple: function(str) {
-            return this.COLORVALUE.PURPLE + str + '\033[0m'
-        },
-        black: function(str) {
-            return this.COLORVALUE.BLACK + str + '\033[0m'
-        },
-        white: function(str) {
-            return this.COLORVALUE.WHITE + str + '\033[0m'
-        },
-        TIPS: function(str) {
-            return this.cyan('[TIPS] ') + str
-        },
-        WATCH: function(str) {
-            return this.green('[WATCH] ') + str
-        },
-        ERROR: function(str) {
-            return this.red('[ERROR] ') + str
-        },
-        INP: function(str) {
-            return this.purple('[INP] ') + str
-        },
-        SUCCESS: function(str) {
-            return this.green('[SUCCESS] ') + str
-        },
-        FLOW: function(str) {
-            if (set.flowCur) {
-                console.log(this.cyan('[FLOW]>>> ') + str)
-            }
+    COLORVALUE: {
+        RED: '\033[0;31m',
+        GREEN: '\033[0;32m',
+        YELLOW: '\033[0;33m',
+        BLUE: '\033[0;34m',
+        PURPLE: '\033[0;35m',
+        CYAN: '\033[0;36m',
+        BLACK: '\033[0;30m',
+        WHITE: '\033[0;37m',
+    },
+    red: function(str) {
+        return this.COLORVALUE.RED + str + '\033[0m'
+    },
+    blue: function(str) {
+        return this.COLORVALUE.BLUE + str + '\033[0m'
+    },
+    green: function(str) {
+        return this.COLORVALUE.GREEN + str + '\033[0m'
+    },
+    yellow: function(str) {
+        return this.COLORVALUE.YELLOW + str + '\033[0m'
+    },
+    cyan: function(str) {
+        return this.COLORVALUE.CYAN + str + '\033[0m'
+    },
+    purple: function(str) {
+        return this.COLORVALUE.PURPLE + str + '\033[0m'
+    },
+    black: function(str) {
+        return this.COLORVALUE.BLACK + str + '\033[0m'
+    },
+    white: function(str) {
+        return this.COLORVALUE.WHITE + str + '\033[0m'
+    },
+    TIPS: function(str) {
+        return this.cyan('[TIPS] ') + str
+    },
+    WATCH: function(str) {
+        return this.green('[WATCH] ') + str
+    },
+    ERROR: function(str) {
+        return this.red('[ERROR] ') + str
+    },
+    INP: function(str) {
+        return this.purple('[INP] ') + str
+    },
+    SUCCESS: function(str) {
+        return this.green('[SUCCESS] ') + str
+    },
+    FLOW: function(str) {
+        if (set.flowCur) {
+            console.log(this.cyan('[FLOW]>>> ') + str)
         }
     }
-    // 功能重写
+}
+// 功能重写
 
 
 var Fedx = function(option) {};
@@ -504,7 +504,7 @@ function _path(f, c) {
     _Path[lk] = c;
     _Path = path.join(path.sep);
     if (c == 'css') {
-        console.log(_Path)
+        // console.log(_Path)
         return _Path;
     } else {
 
@@ -537,6 +537,11 @@ function pxtorem(css) {
     });
 }
 
+// 重复字段
+function str_repeat(str, num){
+    return new Array( num).join( str );
+}
+
 
 // 自定义postcss插件替换路径
 function replaceImgPath(css) {
@@ -544,7 +549,11 @@ function replaceImgPath(css) {
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
             decl.value = decl.value.replace(/url\(.*\)/, function(str) {
-                str = 'url(' + abimg + '/' + str.slice(4, str.length - 1) + ')';
+                var reg = /((icon)-?([\w]*))/;
+                var st = str.replace('url(', '')
+                var c1 = st.split('/');
+                var c2 = c1.slice(0, c1.length -1)
+                str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
                 return str;
             })
         })
@@ -565,26 +574,30 @@ function postcssMedia(css) {
                     'landscape': 'screen and (orientation: landscape)'
                 }
                 switch (mv) {
-                    case '(iphone4)':
-                        return rule.parent.params = mtv.iphone4;
-                        break;
-                    case '(iphone5)':
-                        return rule.parent.params = mtv.iphone5;
-                        break;
-                    case '(iphone6)':
-                        return rule.parent.params = mtv.iphone6;
-                        break;
-                    case '(iphone6p)':
-                        return rule.parent.params = mtv.iphone6p;
-                        break;
-                    case '(landscape)':
-                        return rule.parent.params = mtv.iphone4;
-                        break;
+                case '(iphone4)':
+                    return rule.parent.params = mtv.iphone4;
+                    break;
+                case '(iphone5)':
+                    return rule.parent.params = mtv.iphone5;
+                    break;
+                case '(iphone6)':
+                    return rule.parent.params = mtv.iphone6;
+                    break;
+                case '(iphone6p)':
+                    return rule.parent.params = mtv.iphone6p;
+                    break;
+                case '(landscape)':
+                    return rule.parent.params = mtv.iphone4;
+                    break;
                 }
             }
         });
     });
 }
+
+
+var abimg,
+    abimg1;
 
 FEDX.isExist('local', 'fedxConfig.json')
     .then(function(existInfo) {
@@ -606,18 +619,23 @@ FEDX.isExist('local', 'fedxConfig.json')
                 var _css = ff.split(path.sep);
                 var _css2 = _css.indexOf('postcss');
                 _css[_css2] = 'css';
-                _css = _css.slice(0, _css.length -1)
+                _css = _css.slice(0, _css.length)
                 var _cssPath = _css.join(path.sep);
 
 
                 var _img = f.split(path.sep);
                 var _img2 = _img.indexOf('postcss');
-                _css[_img2] = 'images';
+                _img[_img2] = 'images';
                 var _imgPath = _img.join(path.sep);
                 var cnn1 = path.basename(f);
                 var cnn2 = cnn1.split('.css');
-                console.log(cnn2)
                 var cnn = cnn2[0]+ '_v1.0.1' + path.extname(cnn1);
+                _imgPath = path.dirname(_img.join(path.sep));
+
+
+
+                abimg = path.relative(path.dirname(f), path.dirname(_img.join(path.sep)))
+                abimg1 = path.relative(_cssPath, path.dirname(_img.join(path.sep)))
 
 
                 var data = new Date(),
@@ -631,8 +649,8 @@ FEDX.isExist('local', 'fedxConfig.json')
                 fs.readFile(f, function(err, data) {
                     var st = data;
                     var processors = [
-                        precss,
                         replaceImgPath,
+                        precss,
                         sprites({
                             stylesheetPath: _cssPath,
                             spritePath: _imgPath,
@@ -699,8 +717,8 @@ FEDX.isExist('local', 'fedxConfig.json')
                             }
                         }),
                         pxtorem,
-                        // mobilepx2,
-                        cssnano,
+                        mobilepx2,
+                        // cssnano,
                         postcssMedia,
                         cssMqpacker({
                             sort: function(a, b) {
@@ -722,9 +740,9 @@ FEDX.isExist('local', 'fedxConfig.json')
                     postcss(processors)
                         .process(st, { from: f, to: path.join(_cssPath, cnn) })
                         .then(function(result) {
-                            console.log(_cssPath)
+                            // console.log(_cssPath)
                             fs.writeFileSync(path.join(_cssPath, cnn), result.css);
-                            console.log(color.green('[WATCH] ') + color.cyan(f) + ' ' + color.green(timer));
+                            // console.log(color.green('[WATCH] ') + color.cyan(f) + ' ' + color.green(timer));
                         }, function(error) {
                             console.log(color.red('[' + 'ERROR' + ']：'))
                             console.log(color.yellow('  ［文件］：' + error.file))
@@ -732,7 +750,7 @@ FEDX.isExist('local', 'fedxConfig.json')
                             console.log(color.yellow('  ［错误］：' + error.reason))
                         }).catch();
                 });
-                // browserFn();
+                browserFn();
 
             }
         });
