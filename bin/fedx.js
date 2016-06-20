@@ -30,7 +30,7 @@ var program = require('commander'),
     ipn = ip.address(),
     Q = require('q'),
     Qd = Q.defer(),
-    flowCur = false;
+    flowCur = true;
 
 
 var chokidar = require('chokidar');
@@ -82,170 +82,9 @@ var mkdirFn = () => {
 }
 
 
-var oneSet = (str, key, file) => {
-    var dataJSON = {};
-    if (file == 'global') {
-        file = path.join(__dirname, '../template/config/fedxConfig.json')
-    } else {
-        file = path.join(process.cwd(), 'fedxConfig.json')
-    }
-    fs.exists(path.join(process.cwd(), 'fedxConfig.json'), function(exists) {
-        if (exists) {
-            flow('本地存在配置，只会替换修改项参数')
-            fs.readFile(file, function(err, data) {
-                dataJSON = JSON.parse(data);
-                prompt(color.cyan(str + '：'), function(c) {
-                    if (c == 'Y' || c == 'y') {
-                        c = true;
-                    } else if (c == 'N' || c == 'n') {
-                        c = false;
-                    } else if (typeof c == 'number') {
-                        c = c + 0;
-                    }
-                    dataJSON[key] = c;
-                    fs.writeFile('fedxConfig.json', JSON.stringify(dataJSON), function(err) {
-                        if (err) throw err;
-                        console.log(color.cyan('[TIPS]：写入完成'));
-                    });
-                })
-            })
-        } else {
-            flow('本地不存在配置，其它选项将读取全局配置信息')
-            fs.readFile(path.join(__dirname, '../template/config/fedxConfig.json'), function(err, data) {
-                dataJSON = JSON.parse(data);
-                prompt(color.cyan(str + '：'), function(c) {
-                    if (c == 'Y' || c == 'y') {
-                        c = true;
-                    } else if (c == 'N' || c == 'n') {
-                        c = false;
-                    } else if (typeof c == 'number') {
-                        c = c + 0;
-                    }
-                    dataJSON[key] = c;
-                    fs.writeFile('fedxConfig.json', JSON.stringify(dataJSON), function(err) {
-                        if (err) throw err;
-                        console.log(color.cyan('[TIPS]：写入完成'));
-                    });
-                })
-            })
-        }
-    })
-
-}
-
-
-
-
 program
     .version(require('../package.json').version)
-    .option('-c, --config', '设置本地配置文件')
-    .option('-C, --CONFIG', '设置全局配置文件')
-    .option('-a, --name', '设置本地项目名称')
-    .option('-A, --NAME', '设置全局项目名称')
-    .option('-r, --root', '配置本地项目根目录')
-    .option('-R, --ROOT', '配置全局项目根目录')
-    .option('-t, --html', '设置本地html目录')
-    .option('-T, --HTML', '设置全局html目录')
-    .option('-i, --images', '设置本地images目录')
-    .option('-I, --IMAGES', '设置全局images目录')
-    .option('-j, --jade', '设置本地jade目录')
-    .option('-J, --JADE', '设置全局jade目录')
-    .option('-s, --css', '设置本地css输出目录')
-    .option('-S, --CSS', '设置全局css输出目录')
-    .option('-p, --postcss', '设置本地postcss目录')
-    .option('-P, --POSTCSS', '设置全局postcss目录')
-    .option('-d, --debug', '设置本地debug模式')
-    .option('-D, --DEBUG', '设置全局debug模式')
-    .option('-e, --sprite', '设置本地sprite前缀')
-    .option('-E, --SPRITE', '设置全局sprite前缀')
-    .option('-n, --imgmin', '设置本地图片压缩质量')
-    .option('-N, --IMGMIN', '设置全局图片压缩质量')
-    .option('-m, --mode', '设置本地模式')
-    .option('-N, --MODE', '设置全局模式')
-    .option('-g, --create', '创建目录')
     .parse(process.argv);
-
-switch (program.rawArgs[program.rawArgs.length - 1]) {
-case '-r':
-    oneSet(color.red('[INP]') + '设置本地项目根目录(.)', 'rootPath', 'local')
-    break;
-case '-R':
-    oneSet(color.red('[INP]') + '设置全局项目根目录(.)', 'rootPath', 'global')
-    break;
-case '-a':
-    oneSet(color.red('[INP]') + '设置本地项目根目录(.)', 'name', 'local')
-    break;
-case '-A':
-    oneSet(color.red('[INP]') + '设置全局项目根目录(.)', 'name', 'global')
-    break;
-case '-c':
-    confAll('local');
-    break;
-case '-C':
-    confAll('global');
-    break;
-case '-t':
-    oneSet(color.red('[INP]') + '设置本地html目录(html)', 'htmlPath', 'local')
-    break;
-case '-T':
-    oneSet(color.red('[INP]') + '设置全局html目录(html)', 'htmlPath', 'global')
-    break;
-case '-i':
-    oneSet(color.red('[INP]') + '设置本地images目录(images)', 'imagesPath', 'local')
-    break;
-case '-I':
-    oneSet(color.red('[INP]') + '设置全局images目录(images)', 'imagesPath', 'global')
-    break;
-case '-j':
-    oneSet(color.red('[INP]') + '设置本地Jade目录(jade)', 'jadePath', 'local')
-    break;
-case '-J':
-    oneSet(color.red('[INP]') + '设置全局Jade目录(jade)', 'jadePath', 'global')
-    break;
-case '-s':
-    oneSet(color.red('[INP]') + '设置本地css输出目录(css)', 'cssPath', 'local')
-    break;
-case '-S':
-    oneSet(color.red('[INP]') + '设置全局css输出目录(css)', 'cssPath', 'global')
-    break;
-case '-p':
-    oneSet(color.red('[INP]') + '设置本地postcss目录(postcss)', 'postcssPath', 'local')
-    break;
-case '-P':
-    oneSet(color.red('[INP]') + '设置全局postcss目录(postcss)', 'postcssPath', 'global')
-    break;
-case '-d':
-    oneSet(color.red('[INP]') + '设置本地debug模式(y/n)', 'debug', 'local')
-    break;
-case '-D':
-    oneSet(color.red('[INP]') + '设置全局debug模式(y/n)', 'debug', 'global')
-    break;
-case '-e':
-    oneSet(color.red('[INP]') + '设置本地sprite前缀(icon)', 'sprite', 'local')
-    break;
-case '-E':
-    oneSet(color.red('[INP]') + '设置全局sprite前缀(icon)', 'sprite', 'global')
-    break;
-case '-n':
-    oneSet(color.red('[INP]') + '设置本地图片压缩质量(0-100)', 'imgmin', 'local')
-    break;
-case '-N':
-    oneSet(color.red('[INP]') + '设置全局图片压缩质量(0-100)', 'imgmin', 'global')
-    break;
-case '-m':
-    oneSet(color.red('[INP]') + '设置本地运行模式(y/n)', 'mode', 'local')
-    break;
-case '-M':
-    oneSet(color.red('[INP]') + '设置全局运行模式(y/n)', 'mode', 'global')
-    break;
-case '-g':
-    mkdirFn();
-    break;
-default:
-    // getabspath();
-    break;
-}
-
 
 
 
@@ -256,7 +95,7 @@ var locaConfigArr = [{
     key: 'name',
     value: 'FEDX',
     type: 'dirname',
-    succ: success,
+
     fail: function() {}
 }, {
     text: '是否为独立模式（Y/N）:',
@@ -517,7 +356,7 @@ function mobilepx2(css) {
     flow('已开启移动端px单位除2功能')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
-            decl.value = decl.value.replace(/(\d*\.?\d+)px/ig, function(str) {
+            decl.value = decl.value.replace(/(\d*\.?\d+)pm/ig, function(str) {
                 return (parseFloat(str) / 2) + 'px';
             })
 
@@ -530,7 +369,7 @@ function pxtorem(css) {
     flow('已开启pm转换rem')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
-            decl.value = decl.value.replace(/(\d*\.?\d+)pm/ig, function(str) {
+            decl.value = decl.value.replace(/(\d*\.?\d+)rm/ig, function(str) {
                 return (parseFloat(str) / 100) + 'rem';
             })
         })
@@ -740,9 +579,7 @@ FEDX.isExist('local', 'fedxConfig.json')
                     postcss(processors)
                         .process(st, { from: f, to: path.join(_cssPath, cnn) })
                         .then(function(result) {
-                            // console.log(_cssPath)
                             fs.writeFileSync(path.join(_cssPath, cnn), result.css);
-                            // console.log(color.green('[WATCH] ') + color.cyan(f) + ' ' + color.green(timer));
                         }, function(error) {
                             console.log(color.red('[' + 'ERROR' + ']：'))
                             console.log(color.yellow('  ［文件］：' + error.file))
@@ -750,7 +587,7 @@ FEDX.isExist('local', 'fedxConfig.json')
                             console.log(color.yellow('  ［错误］：' + error.reason))
                         }).catch();
                 });
-                browserFn();
+                // browserFn();
 
             }
         });
