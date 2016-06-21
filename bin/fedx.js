@@ -557,7 +557,7 @@ FEDX.isExist('local', 'fedxConfig.json')
                         }),
                         pxtorem,
                         mobilepx2,
-                        // cssnano,
+                        cssnano,
                         postcssMedia,
                         cssMqpacker({
                             sort: function(a, b) {
@@ -588,7 +588,6 @@ FEDX.isExist('local', 'fedxConfig.json')
                         }).catch();
                 });
                 // browserFn();
-
             }
         });
 
