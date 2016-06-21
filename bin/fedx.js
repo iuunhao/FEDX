@@ -35,6 +35,14 @@ var program = require('commander'),
 
 var chokidar = require('chokidar');
 
+var s = path.join(process.cwd());
+var bs = require("browser-sync").create();
+bs.init({
+    server: {
+        baseDir: '/Users/iuunhao/Desktop/Github/fedx-test/FEDX',
+        directory: true
+    }
+})
 // 流控制
 var flow = (str) => {
     if (flowCur == true)
@@ -437,7 +445,7 @@ function postcssMedia(css) {
 
 var abimg,
     abimg1;
-
+var htmlpath;
 FEDX.isExist('local', 'fedxConfig.json')
     .then(function(existInfo) {
         return {
@@ -470,6 +478,34 @@ FEDX.isExist('local', 'fedxConfig.json')
                 var cnn2 = cnn1.split('.css');
                 var cnn = cnn2[0]+ '_v1.0.1' + path.extname(cnn1);
                 _imgPath = path.dirname(_img.join(path.sep));
+
+
+
+                // html
+                console.log('html------------------------------')
+
+                _htmlPath = _cssPath.split(path.sep);
+                var _htmlLen = _htmlPath.indexOf('css');
+                _htmlPath[_htmlLen] = 'html';
+
+
+                for(var a = 0; a < _htmlPath.length; a++){
+                    switch(_htmlPath[a]){
+                    case 'weixin':
+                        _htmlPath[a] = '微信';
+                        break;
+                    }
+                }
+                var htmlpath = _htmlPath.join(path.sep);
+                console.log(htmlpath)
+
+                // console.log(f)
+                // console.log(_cssPath + cnn)
+
+
+
+                console.log('html------------------------------')
+                // html
 
 
 
@@ -580,6 +616,8 @@ FEDX.isExist('local', 'fedxConfig.json')
                         .process(st, { from: f, to: path.join(_cssPath, cnn) })
                         .then(function(result) {
                             fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+
+
                         }, function(error) {
                             console.log(color.red('[' + 'ERROR' + ']：'))
                             console.log(color.yellow('  ［文件］：' + error.file))
@@ -587,11 +625,20 @@ FEDX.isExist('local', 'fedxConfig.json')
                             console.log(color.yellow('  ［错误］：' + error.reason))
                         }).catch();
                 });
-                // browserFn();
             }
         });
-
+        // browserFn();
     })
+
+
+bs.watch(htmlpath + path.sep + '*.html').on("change", bs.reload);
+bs.watch(s + path.sep + '*.css', function (event, file) {
+    if (event === "change"){
+        bs.reload(s + path.sep + '*.css');
+    }
+});
+
+
 
 // 生成项目文件列表
 function cPList() {
