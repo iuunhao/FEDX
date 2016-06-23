@@ -30,19 +30,11 @@ var program = require('commander'),
     ipn = ip.address(),
     Q = require('q'),
     Qd = Q.defer(),
-    flowCur = true;
+    flowCur = false;
+var atImport = require("postcss-import");
 
 
 var chokidar = require('chokidar');
-
-var s = path.join(process.cwd());
-var bs = require("browser-sync").create();
-bs.init({
-    server: {
-        baseDir: '/Users/iuunhao/Desktop/Github/fedx-test/FEDX',
-        directory: true
-    }
-})
 // 流控制
 var flow = (str) => {
     if (flowCur == true)
@@ -93,9 +85,6 @@ var mkdirFn = () => {
 program
     .version(require('../package.json').version)
     .parse(process.argv);
-
-
-
 
 // 交互函数
 var locaConfigArr = [{
@@ -212,11 +201,6 @@ function nextFn(arr) {
     })
 }
 // nextFn(locaConfigArr);
-
-var set = {
-    flowCur: true
-}
-
 // color
 var color = {
     COLORVALUE: {
@@ -313,52 +297,6 @@ Fedx.prototype.fsReadFile = function(file) {
 
 
 
-
-Fedx.prototype.uFileList = function() {}
-
-
-Fedx.prototype.init = function() {
-
-}
-
-
-
-Fedx.prototype.init = function() {
-    console.log(color.TIPS('提示'))
-    console.log(color.SUCCESS('成功'))
-    console.log(color.ERROR('错误'))
-    console.log(color.INP('交互'))
-    console.log(color.WATCH('监听'))
-    color.FLOW('流')
-    console.log(color.blue('blue'))
-    console.log(color.red('red'))
-    console.log(color.yellow('yellow'))
-    console.log(color.cyan('cyan'))
-    console.log(color.black('black'))
-    console.log(color.white('white'))
-    console.log(color.purple('purple'))
-}
-
-
-var FEDX = new Fedx();
-
-// FEDX.init();
-
-function _path(f, c) {
-    var _Path = f;
-    var _PathP = f.split(path.sep);
-    var lk = _PathP.indexOf('postcss');
-    _Path[lk] = c;
-    _Path = path.join(path.sep);
-    if (c == 'css') {
-        // console.log(_Path)
-        return _Path;
-    } else {
-
-        return _Path;
-    }
-}
-
 // 自定义postcss函数函数函数函数
 function mobilepx2(css) {
     flow('已开启移动端px单位除2功能')
@@ -385,8 +323,8 @@ function pxtorem(css) {
 }
 
 // 重复字段
-function str_repeat(str, num){
-    return new Array( num).join( str );
+function str_repeat(str, num) {
+    return new Array(num).join(str);
 }
 
 
@@ -396,12 +334,24 @@ function replaceImgPath(css) {
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
             decl.value = decl.value.replace(/url\(.*\)/, function(str) {
-                var reg = /((icon)-?([\w]*))/;
-                var st = str.replace('url(', '')
-                var c1 = st.split('/');
-                var c2 = c1.slice(0, c1.length -1)
-                str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
-                return str;
+                var cssFile = decl.source.input.file;
+                if (path.basename(cssFile) == 'common.css') {
+                    var _abimg1 = abimg1.split('/');
+                    var _abimgIndex = _abimg1.indexOf('images');
+                    var _imgpath = _abimg1.slice(0, _abimgIndex).join('/') + '/';
+                    var st = str.replace('url(../images/', '')
+                    var c1 = st.split('/');
+                    var c2 = c1.slice(0, c1.length - 1)
+                    str = 'url(' + _imgpath + str.slice(7, str.length - 1) + ')';
+                    return str;
+                } else {
+                    var st = str.replace('url(', '')
+                    var c1 = st.split('/');
+                    var c2 = c1.slice(0, c1.length - 1)
+                    str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
+                    return str;
+                }
+
             })
         })
     });
@@ -411,6 +361,7 @@ function postcssMedia(css) {
     flow('已开启媒体查询识别功能')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
+            // console.log(rule)
             if (rule.type === "atrule" || (rule.parent && rule.parent.type === "atrule")) {
                 var mv = rule.parent.params;
                 var mtv = {
@@ -436,207 +387,31 @@ function postcssMedia(css) {
                 case '(landscape)':
                     return rule.parent.params = mtv.iphone4;
                     break;
+                case 'default':
+                    break;
                 }
             }
         });
     });
 }
 
-
-var abimg,
-    abimg1;
-var htmlpath;
-FEDX.isExist('local', 'fedxConfig.json')
-    .then(function(existInfo) {
-        return {
-            existInfo: existInfo,
-            configInfo: FEDX.fsReadFile(existInfo.path)
-        }
-    }).then(function(value) {
-        if (value.mode) {
-            console.log('zzzzz')
-        }
-        var roop = process.cwd();
-        var roop2 = roop.split(path.sep);
-        var roopl = roop2.indexOf('FEDX') + 1;
-        var broo = roop2.slice(0, roopl).join(path.sep);
-        chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
-            if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
-                var ff = path.dirname(f);
-                var _css = ff.split(path.sep);
-                var _css2 = _css.indexOf('postcss');
-                _css[_css2] = 'css';
-                _css = _css.slice(0, _css.length)
-                var _cssPath = _css.join(path.sep);
+// FEDX.isExist('global', 'fedxConfig.json')
+//     .then(function(existInfo) {
+//         return {
+//             existInfo: existInfo,
+//             configInfo: FEDX.fsReadFile(existInfo.path)
+//         }
+//     }).then(function(value) {
+//         // browserFn();
+//     })
 
 
-                var _img = f.split(path.sep);
-                var _img2 = _img.indexOf('postcss');
-                _img[_img2] = 'images';
-                var _imgPath = _img.join(path.sep);
-                var cnn1 = path.basename(f);
-                var cnn2 = cnn1.split('.css');
-                var cnn = cnn2[0]+ '_v1.0.1' + path.extname(cnn1);
-                _imgPath = path.dirname(_img.join(path.sep));
-
-
-
-                // html
-                console.log('html------------------------------')
-
-                _htmlPath = _cssPath.split(path.sep);
-                var _htmlLen = _htmlPath.indexOf('css');
-                _htmlPath[_htmlLen] = 'html';
-
-
-                for(var a = 0; a < _htmlPath.length; a++){
-                    switch(_htmlPath[a]){
-                    case 'weixin':
-                        _htmlPath[a] = '微信';
-                        break;
-                    }
-                }
-                var htmlpath = _htmlPath.join(path.sep);
-                console.log(htmlpath)
-
-                // console.log(f)
-                // console.log(_cssPath + cnn)
-
-
-
-                console.log('html------------------------------')
-                // html
-
-
-
-                abimg = path.relative(path.dirname(f), path.dirname(_img.join(path.sep)))
-                abimg1 = path.relative(_cssPath, path.dirname(_img.join(path.sep)))
-
-
-                var data = new Date(),
-                    curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
-                    curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
-                    curSec = data.getSeconds() < 10 ? ('0' + data.getSeconds()) : data.getSeconds(),
-                    curMill = Math.ceil(data.getMilliseconds() / 10),
-                    curMillis = curMill < 10 ? ('0' + curMill) : curMill;
-                time = '[' + curHour + ':' + curMinute + ':' + curSec + ':' + curMillis + '] ';
-                console.log(color.WATCH(color.red(time)) + f)
-                fs.readFile(f, function(err, data) {
-                    var st = data;
-                    var processors = [
-                        replaceImgPath,
-                        precss,
-                        sprites({
-                            stylesheetPath: _cssPath,
-                            spritePath: _imgPath,
-                            spritesmith: {
-                                padding: 5
-                            },
-                            hooks: {
-                                onUpdateRule: function(rule, token, image) {
-                                    var backgroundSizeX = image.spriteWidth;
-                                    var backgroundSizeY = image.spriteHeight;
-                                    var backgroundPositionX = image.coords.x;
-                                    var backgroundPositionY = image.coords.y;
-                                    backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX;
-                                    backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY;
-                                    backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX;
-                                    backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY;
-
-                                    var backgroundImage = postcss.decl({
-                                        prop: 'background-image',
-                                        value: 'url(' + image.spriteUrl + ')'
-                                    });
-
-                                    var backgroundSize = postcss.decl({
-                                        prop: 'background-size',
-                                        value: backgroundSizeX + 'px ' + backgroundSizeY + 'px'
-                                    });
-
-                                    var backgroundPosition = postcss.decl({
-                                        prop: 'background-position',
-                                        value: -backgroundPositionX + 'px ' + -backgroundPositionY + 'px'
-                                    });
-
-                                    var minSpriteWidth = postcss.decl({
-                                        prop: 'width',
-                                        value: image.coords.width + 'px'
-                                    });
-
-                                    var minSpriteHeight = postcss.decl({
-                                        prop: 'height',
-                                        value: image.coords.height + 'px'
-                                    });
-
-                                    rule.insertAfter(token, backgroundImage);
-                                    rule.insertAfter(backgroundImage, backgroundPosition);
-                                    rule.insertAfter(backgroundPosition, backgroundSize);
-                                    rule.insertAfter(minSpriteWidth, minSpriteWidth);
-                                    rule.insertAfter(minSpriteHeight, minSpriteHeight);
-                                }
-                            },
-                            groupBy: function(image) {
-                                var reg = /((icon)-?([\w]*))/;
-                                if (reg.test(image.url) === -1) {
-                                    return Promise.reject();
-                                }
-                                var a = reg.exec(image.url);
-                                var c = image.url.split(path.sep);
-                                patm = c[c.length - 3];
-                                return Promise.resolve(c[c.length - 2]);
-                            },
-                            filterBy: function(image) {
-                                if (!/((icon)-?([\w]*))/.test(image.url))
-                                    return Promise.reject();
-                                return Promise.resolve();
-                            }
-                        }),
-                        pxtorem,
-                        mobilepx2,
-                        cssnano,
-                        postcssMedia,
-                        cssMqpacker({
-                            sort: function(a, b) {
-                                return a.localeCompare(b);
-                            }
-                        }),
-                        autoprefixer({
-                            browsers: [
-                                'last 9 versions'
-                            ]
-                        }),
-                        postcssSorting({
-                            "sort-order": "yandex"
-                        })
-                        // opacity,
-                        // crip,
-                        // clean,
-                    ];
-                    postcss(processors)
-                        .process(st, { from: f, to: path.join(_cssPath, cnn) })
-                        .then(function(result) {
-                            fs.writeFileSync(path.join(_cssPath, cnn), result.css);
-
-
-                        }, function(error) {
-                            console.log(color.red('[' + 'ERROR' + ']：'))
-                            console.log(color.yellow('  ［文件］：' + error.file))
-                            console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
-                            console.log(color.yellow('  ［错误］：' + error.reason))
-                        }).catch();
-                });
-            }
-        });
-        // browserFn();
-    })
-
-
-bs.watch(htmlpath + path.sep + '*.html').on("change", bs.reload);
-bs.watch(s + path.sep + '*.css', function (event, file) {
-    if (event === "change"){
-        bs.reload(s + path.sep + '*.css');
-    }
-});
+// bs.watch(htmlpath + path.sep + '*.html').on("change", bs.reload);
+// bs.watch(s + path.sep + '*.css', function(event, file) {
+//     if (event === "change") {
+//         bs.reload(s + path.sep + '*.css');
+//     }
+// });
 
 
 
@@ -698,3 +473,190 @@ function cPList() {
 }
 
 // cPList()
+
+
+
+
+
+
+
+var abimg,
+    abimg1,
+    mode;
+var htmlpath;
+var roop = process.cwd();
+var roop2 = roop.split(path.sep);
+var roopl = roop2.indexOf('FEDX') + 1;
+var broo = roop2.slice(0, roopl).join(path.sep);
+chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
+    if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
+        var ff = path.dirname(f);
+        var _css = ff.split(path.sep);
+        var _css2 = _css.indexOf('postcss');
+        _css[_css2] = 'css';
+        _css = _css.slice(0, _css.length)
+        var _cssPath = _css.join(path.sep);
+
+
+        var _img = f.split(path.sep);
+        var _img2 = _img.indexOf('postcss');
+        _img[_img2] = 'images';
+        var _imgPath = _img.join(path.sep);
+        var cnn1 = path.basename(f);
+        var cnn2 = cnn1.split('.css');
+        var arrpath = path.dirname(f).split(path.sep);
+        var regv = /(v\d)(\.\d)+/;
+        if(regv.test(arrpath)){
+            var cnn = cnn2[0] + '_' + path.basename(arrpath.join(path.sep)) + path.extname(cnn1);
+        }else{
+            var cnn = cnn2[0] + path.extname(cnn1);
+        }
+        _imgPath = path.dirname(_img.join(path.sep));
+
+
+
+        // html
+        // console.log('html------------------------------')
+
+        // _htmlPath = _cssPath.split(path.sep);
+        // var _htmlLen = _htmlPath.indexOf('css');
+        // _htmlPath[_htmlLen] = 'html';
+
+
+        // for (var a = 0; a < _htmlPath.length; a++) {
+        //     switch (_htmlPath[a]) {
+        //         case 'weixin':
+        //             _htmlPath[a] = '微信';
+        //             break;
+        //     }
+        // }
+        // var htmlpath = _htmlPath.join(path.sep);
+        // console.log(htmlpath)
+
+        // console.log('html------------------------------')
+
+        var mo = f.split(path.sep);
+        if(mo.indexOf('mobile') != -1){
+            mode = 2;
+        }else{
+            mode = 1;
+        };
+
+        abimg = path.relative(path.dirname(f), path.dirname(_img.join(path.sep)))
+        abimg1 = path.relative(_cssPath, path.dirname(_img.join(path.sep)))
+
+
+        var data = new Date(),
+            curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
+            curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
+            curSec = data.getSeconds() < 10 ? ('0' + data.getSeconds()) : data.getSeconds(),
+            curMill = Math.ceil(data.getMilliseconds() / 10),
+            curMillis = curMill < 10 ? ('0' + curMill) : curMill;
+        time = '[' + curHour + ':' + curMinute + ':' + curSec + ':' + curMillis + '] ';
+        console.log(color.WATCH(color.red(time)) + f)
+        console.log(color.TIPS(color.red('[ 输出位置 ] ')) + path.join(_cssPath, cnn))
+        fs.readFile(f, function(err, data) {
+            var st = data;
+            var processors = [
+                atImport,
+                replaceImgPath,
+                precss,
+                sprites({
+                    stylesheetPath: _cssPath,
+                    spritePath: _imgPath,
+                    spritesmith: {
+                        padding: 5
+                    },
+                    hooks: {
+                        onUpdateRule: function(rule, token, image) {
+                            var backgroundSizeX = (image.spriteWidth / image.coords.width) * 100;
+                            var backgroundSizeY = (image.spriteHeight / image.coords.height) * 100;
+                            var backgroundPositionX = (image.coords.x / (image.spriteWidth - image.coords.width)) * 100;
+                            var backgroundPositionY = (image.coords.y / (image.spriteHeight - image.coords.height)) * 100;
+
+                            backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX.toFixed(3);
+                            backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY.toFixed(3);
+                            backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX.toFixed(3);
+                            backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY.toFixed(3);
+
+                            var backgroundImage = postcss.decl({
+                                prop: 'background-image',
+                                value: 'url(' + image.spriteUrl + ')'
+                            });
+
+                            var backgroundSize = postcss.decl({
+                                prop: 'background-size',
+                                value: backgroundSizeX + '% ' + backgroundSizeY + '%'
+                            });
+
+                            var backgroundPosition = postcss.decl({
+                                prop: 'background-position',
+                                value: backgroundPositionX + '% ' + backgroundPositionY + '%'
+                            });
+
+                            var minSpriteWidth = postcss.decl({
+                                prop: 'width',
+                                value: (image.coords.width / mode) + 'px'
+                            });
+
+                            var minSpriteHeight = postcss.decl({
+                                prop: 'height',
+                                value: (image.coords.height / mode) + 'px'
+                            });
+
+                            rule.insertAfter(token, backgroundImage);
+                            rule.insertAfter(backgroundImage, backgroundPosition);
+                            rule.insertAfter(backgroundPosition, backgroundSize);
+                            rule.insertAfter(minSpriteWidth, minSpriteWidth);
+                            rule.insertAfter(minSpriteHeight, minSpriteHeight);
+                        }
+                    },
+                    groupBy: function(image) {
+                        var reg = /((icon)-?([\w]*))/;
+                        if (reg.test(image.url) === -1) {
+                            return Promise.reject();
+                        }
+                        var a = reg.exec(image.url);
+                        var c = image.url.split(path.sep);
+                        return Promise.resolve(c[c.length - 3]);
+                    },
+                    filterBy: function(image) {
+                        if (!/((icon)-?([\w]*))/.test(image.url))
+                            return Promise.reject();
+                        return Promise.resolve();
+                    }
+                }),
+                pxtorem,
+                mobilepx2,
+                // cssnano,
+                postcssMedia,
+                cssMqpacker({
+                    sort: function(a, b) {
+                        return a.localeCompare(b);
+                    }
+                }),
+                autoprefixer({
+                    browsers: [
+                        'last 9 versions'
+                    ]
+                }),
+                postcssSorting({
+                    "sort-order": "yandex"
+                })
+                // opacity,
+                // crip,
+                // clean,
+            ];
+            postcss(processors)
+                .process(st, { from: f, to: path.join(_cssPath, cnn) })
+                .then(function(result) {
+                    fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+                }, function(error) {
+                    console.log(color.red('[' + 'ERROR' + ']：'))
+                    console.log(color.yellow('  ［文件］：' + error.file))
+                    console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
+                    console.log(color.yellow('  ［错误］：' + error.reason))
+                }).catch();
+        });
+    }
+});
