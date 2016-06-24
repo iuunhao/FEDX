@@ -1,1 +1,1 @@
-{ "name": "FEDX", "mode": false, "rootPath": ".", "imagesPath": "images", "postcssPath": "postcss", "jadePath": "jade", "spriteMark": "icon", "cssPath": "css", "htmlPath": "html", "imgmin": 70 }
+{ "name": "newStatic", "mode": false, "rootPath": ".", "imagesPath": "images", "postcssPath": "postcss", "jadePath": "jade", "spriteMark": "icon", "cssPath": "css", "htmlPath": "html", "imgmin": 70 }
