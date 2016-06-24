@@ -335,7 +335,6 @@ function replaceImgPath(css) {
         rule.walkDecls(function(decl, i) {
             decl.value = decl.value.replace(/url\(.*\)/, function(str) {
                 var cssFile = decl.source.input.file;
-                console.log(decl)
                 if (path.basename(cssFile) == 'common.css') {
                     var _abimg1 = abimg1.split('/');
                     var _abimgIndex = _abimg1.indexOf('images');
