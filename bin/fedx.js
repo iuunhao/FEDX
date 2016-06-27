@@ -485,8 +485,12 @@ var abimg,
     mode;
 var htmlpath;
 var roop = process.cwd();
+
+console.log(roop)
+
+
 var roop2 = roop.split(path.sep);
-var roopl = roop2.indexOf('FEDX') + 1;
+var roopl = roop2.indexOf('newStatic') + 1;
 var broo = roop2.slice(0, roopl).join(path.sep);
 chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
     if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
@@ -563,6 +567,11 @@ chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
                     atImport,
                     replaceImgPath,
                     precss,
+                    autoprefixer({
+                        browsers: [
+                            'last 9 versions'
+                        ]
+                    }),
                     sprites({
                         stylesheetPath: _cssPath,
                         spritePath: _imgPath,
@@ -637,11 +646,7 @@ chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
                             return a.localeCompare(b);
                         }
                     }),
-                    autoprefixer({
-                        browsers: [
-                            'last 9 versions'
-                        ]
-                    }),
+
                     postcssSorting({
                         "sort-order": "yandex"
                     })
