@@ -1,6 +1,6 @@
 {
   "name": "fedx",
-  "version": "0.1.8",
+  "version": "0.0.8",
   "description": "A simple document operation (for personal use)",
   "main": "index.js",
   "bin": {
@@ -11,28 +11,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iuunhao/fdqy.git"
+    "url": "git+https://github.com/iuunhao/fedx.git"
   },
   "bugs": {
-    "url": "https://github.com/iuunhao/fdqy/issues"
+    "url": "https://github.com/iuunhao/fedx/issues"
   },
-  "homepage": "https://github.com/iuunhao/fdqy#readme",
+  "homepage": "https://github.com/iuunhao/fedx#readme",
   "author": "iuunhao",
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.3.5",
     "commander": "^2.9.0",
     "fs": "0.0.2",
-    "fs-extra": "^0.30.0"
-  },
-  "devDependencies": {
+    "fs-extra": "^0.30.0",
     "JSONStream": "^1.1.1",
     "autoprefixer": "^6.3.6",
     "bash-color": "0.0.4",
     "browser-sync": "^2.13.0",
     "bug-killer": "^4.2.3",
     "cheerio": "^0.20.0",
-    "chokidar": "^1.5.2",
+    "chokidar": "1.4.3",
     "css-mqpacker": "^5.0.1",
     "cssmin": "^0.4.3",
     "cssnano": "^3.6.2",

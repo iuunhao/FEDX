@@ -81,10 +81,21 @@ var mkdirFn = () => {
     })
 }
 
-
 program
     .version(require('../package.json').version)
+	.option('-a, --all', '编译当前目录下所有文件')
     .parse(process.argv);
+
+// // 界面交互
+var prompt = (prompt, callback) => {
+    process.stdout.write(prompt);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    process.stdin.once('data', function(chunk) {
+        process.stdin.pause();
+        callback(chunk.trim());
+    });
+}
 
 // 交互函数
 var locaConfigArr = [{
@@ -327,12 +338,13 @@ function str_repeat(str, num) {
     return new Array(num).join(str);
 }
 
-
+var i1;
 // 自定义postcss插件替换路径
 function replaceImgPath(css) {
     flow('已开启postcss图片相对路径处理')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
+			i1 += i;
             decl.value = decl.value.replace(/url\(.*\)/, function(str) {
                 var cssFile = decl.source.input.file;
                 if (path.basename(cssFile) == 'common.css') {
@@ -361,11 +373,11 @@ function postcssMedia(css) {
     flow('已开启媒体查询识别功能')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
-            // console.log(rule)
-            if (rule.type === "atrule" || (rule.parent && rule.parent.type === "atrule")) {
+			if (rule.parent.params != 'undefined') {
                 var mv = rule.parent.params;
                 var mtv = {
                     'iphone4': 'screen and (device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2)',
+                    'iphone45': 'screen and (device-width: 320px) and (-webkit-device-pixel-ratio: 2)',
                     'iphone5': 'screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)',
                     'iphone6': 'only screen and (min-device-width: 375px) and (max-device-width: 667px) and (orientation: portrait)',
                     'iphone6p': 'only screen and (min-device-width: 414px) and (max-device-width: 736px) and (orientation: portrait)',
@@ -377,6 +389,9 @@ function postcssMedia(css) {
                         break;
                     case '(iphone5)':
                         return rule.parent.params = mtv.iphone5;
+                        break;
+                    case '(iphone45)':
+                        return rule.parent.params = mtv.iphone45;
                         break;
                     case '(iphone6)':
                         return rule.parent.params = mtv.iphone6;
@@ -395,277 +410,415 @@ function postcssMedia(css) {
     });
 }
 
-// FEDX.isExist('global', 'fedxConfig.json')
-//     .then(function(existInfo) {
-//         return {
-//             existInfo: existInfo,
-//             configInfo: FEDX.fsReadFile(existInfo.path)
-//         }
-//     }).then(function(value) {
-//         // browserFn();
-//     })
 
 
-// bs.watch(htmlpath + path.sep + '*.html').on("change", bs.reload);
-// bs.watch(s + path.sep + '*.css', function(event, file) {
-//     if (event === "change") {
-//         bs.reload(s + path.sep + '*.css');
-//     }
-// });
+function dan(){
+	var abimg,
+		abimg1,
+		mode;
+	var htmlpath;
+	var roop = process.cwd();
+
+
+	var roop2 = roop.split(path.sep);
+	var roopl = roop2.indexOf('newStatic') + 1;
+	var broo = roop2.slice(0, roopl).join(path.sep);
+
+
+	chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
+		if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
+			var reg_ = /^\_/;
+			if (!reg_.test(path.basename(f))) {
+				var ff = path.dirname(f);
+				var _css = ff.split(path.sep);
+				var _css2 = _css.indexOf('postcss');
+				_css[_css2] = 'css';
+				_css = _css.slice(0, _css.length)
+				var _cssPath = _css.join(path.sep);
+
+
+				var _img = f.split(path.sep);
+				var _img2 = _img.indexOf('postcss');
+				_img[_img2] = 'images';
+				var _imgPath = _img.join(path.sep);
+				var cnn1 = path.basename(f);
+				var cnn2 = cnn1.split('.css');
+				var arrpath = path.dirname(f).split(path.sep);
+				var regv = /(v\d)(\.\d)+/;
+				if (regv.test(arrpath)) {
+					var cnn = cnn2[0] + '_' + path.basename(arrpath.join(path.sep)) + path.extname(cnn1);
+				} else {
+					var cnn = cnn2[0] + path.extname(cnn1);
+				}
+				_imgPath = path.dirname(_img.join(path.sep));
 
 
 
-// 生成项目文件列表
-function cPList() {
-    FEDX.isExist('local', 'fedxConfig.json')
-        .then(function(existInfo) {
-            return {
-                existInfo: existInfo,
-                configInfo: FEDX.fsReadFile(existInfo.path)
-            }
-        }).then(function(value) {
-            var absPath = [
-                'postcssAbsolute ',
-                'htmlAbsolute ',
-                'imagesAbsolute ',
-                'cssAbsolute '
-            ]
-            var list = {
-                postcssList: [],
-                htmlList: [],
-                imagesList: [],
-                cssList: []
-            }
-            rd.read(value.configInfo.rootAbsolute, function(err, files) {
-                if (err) throw err;
-                for (var i = 0; i < files.length; i++) {
-                    if (path.extname(files[i]) != '') {
-                        var aa = files[i].split(path.sep)
-                        if (aa.indexOf(value.configInfo.name) != -1) {
-                            if (files[i].split(path.sep).indexOf('postcss') != -1)
-                                list.postcssList.push(files[i])
-                            if (files[i].split(path.sep).indexOf('html') != -1)
-                                list.htmlList.push(files[i])
-                            if (files[i].split(path.sep).indexOf('images') != -1)
-                                list.imagesList.push(files[i])
-                            if (files[i].split(path.sep).indexOf('css') != -1)
-                                list.cssList.push(files[i])
-                        }
-                    }
-                }
+				// html
+				// console.log('html------------------------------')
 
-                var s = writeLineStream(fs.createWriteStream(path.join('./list.json')), {
-                    newline: '\n',
-                    encoding: function(data) {
-                        return JSON.stringify(data);
-                    },
-                    cachelines: 0
-                });
-                s.write(list, function() {});
-                s.end(function() {
-                    console.log(color.TIPS('文件列表写入完成(list.json)。'))
-                    process.exit();
-                });
+				// _htmlPath = _cssPath.split(path.sep);
+				// var _htmlLen = _htmlPath.indexOf('css');
+				// _htmlPath[_htmlLen] = 'html';
 
-            });
 
-        })
+				// for (var a = 0; a < _htmlPath.length; a++) {
+				//     switch (_htmlPath[a]) {
+				//         case 'weixin':
+				//             _htmlPath[a] = '微信';
+				//             break;
+				//     }
+				// }
+				// var htmlpath = _htmlPath.join(path.sep);
+				// console.log(htmlpath)
+
+				// console.log('html------------------------------')
+
+				var mo = f.split(path.sep);
+				if (mo.indexOf('mobile') != -1) {
+					mode = 2;
+				} else {
+					mode = 1;
+				};
+
+				abimg = path.relative(path.dirname(f), path.dirname(_img.join(path.sep)))
+				abimg1 = path.relative(_cssPath, path.dirname(_img.join(path.sep)))
+
+
+				var data = new Date(),
+					curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
+					curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
+					curSec = data.getSeconds() < 10 ? ('0' + data.getSeconds()) : data.getSeconds(),
+					curMill = Math.ceil(data.getMilliseconds() / 10),
+					curMillis = curMill < 10 ? ('0' + curMill) : curMill;
+				time = '[' + curHour + ':' + curMinute + ':' + curSec + ':' + curMillis + '] ';
+				console.log(color.WATCH(color.red(time)) + f)
+				console.log(color.TIPS(color.red('[ 输出位置 ] ')) + path.join(_cssPath, cnn))
+				fs.readFile(f, function(err, data) {
+					var st = data;
+					var processors = [
+						atImport,
+						replaceImgPath,
+						precss,
+						 autoprefixer({
+							browsers: [
+								'last 9 versions'
+							]
+						}),
+						sprites({
+							stylesheetPath: _cssPath,
+							spritePath: _imgPath,
+							spritesmith: {
+								padding: 5
+							},
+							hooks: {
+								onUpdateRule: function(rule, token, image) {
+									var backgroundSizeX = (image.spriteWidth / image.coords.width) * 100;
+									var backgroundSizeY = (image.spriteHeight / image.coords.height) * 100;
+									var backgroundPositionX = (image.coords.x / (image.spriteWidth - image.coords.width)) * 100;
+									var backgroundPositionY = (image.coords.y / (image.spriteHeight - image.coords.height)) * 100;
+
+									backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX.toFixed(3);
+									backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY.toFixed(3);
+									backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX.toFixed(3);
+									backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY.toFixed(3);
+
+									var backgroundImage = postcss.decl({
+										prop: 'background-image',
+										value: 'url(' + image.spriteUrl + ')'
+									});
+
+									var backgroundSize = postcss.decl({
+										prop: 'background-size',
+										value: backgroundSizeX + '% ' + backgroundSizeY + '%'
+									});
+
+									var backgroundPosition = postcss.decl({
+										prop: 'background-position',
+										value: backgroundPositionX + '% ' + backgroundPositionY + '%'
+									});
+
+									var minSpriteWidth = postcss.decl({
+										prop: 'width',
+										value: (image.coords.width / mode) + 'px'
+									});
+
+									var minSpriteHeight = postcss.decl({
+										prop: 'height',
+										value: (image.coords.height / mode) + 'px'
+									});
+									var norepeat = postcss.decl({
+										prop: 'background-repeat',
+										value: 'no-repeat'
+									});
+
+									rule.insertAfter(token, backgroundImage);
+									rule.insertAfter(backgroundImage, backgroundPosition);
+									rule.insertAfter(backgroundPosition, backgroundSize);
+									rule.insertAfter(minSpriteWidth, minSpriteWidth);
+									rule.insertAfter(minSpriteHeight, minSpriteHeight);
+									rule.insertAfter(minSpriteHeight, minSpriteHeight);
+									rule.insertAfter(norepeat, norepeat);
+								}
+							},
+							groupBy: function(image) {
+								var reg = /((icon)-?([\w]*))/;
+								if (reg.test(image.url) === -1) {
+									return Promise.reject();
+								}
+								var a = reg.exec(image.url);
+								var c = image.url.split('/');
+								return Promise.resolve(c[c.length - 3]);
+							},
+							filterBy: function(image) {
+								if (!/((icon)-?([\w]*))/.test(image.url))
+									return Promise.reject();
+								return Promise.resolve();
+							}
+						}),
+						pxtorem,
+						mobilepx2,
+						cssnano,
+						postcssMedia,
+						cssMqpacker({
+							sort: function(a, b) {
+								return a.localeCompare(b);
+							}
+						}),
+
+						postcssSorting({
+							"sort-order": "yandex"
+						})
+						// opacity,
+						// crip,
+						// clean,
+					];
+					postcss(processors)
+						.process(st, { from: f, to: path.join(_cssPath, cnn) })
+						.then(function(result) {
+							fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+						}, function(error) {
+							console.log(color.red('[' + 'ERROR' + ']：'))
+							console.log(color.yellow('  ［文件］：' + error.file))
+							console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
+							console.log(color.yellow('  ［错误］：' + error.reason))
+						}).catch();
+				});
+			}
+
+		}
+	});
+
 }
 
-// cPList()
+
+function all(){
+	var abimg,
+		abimg1,
+		mode;
+	var htmlpath;
+	var roop = process.cwd();
+	var roop2 = roop.split(path.sep);
+	if((roop2.indexOf('newStatic') != -1) && (roop2.indexOf('postcss') != -1)){
+		chokidar.watch(roop, { ignored: /[\/\\]\./}).on('all', (event, f) => {
+			if (f.split(path.sep).indexOf('postcss') != -1) {
+				var reg_ = /^\_/;
+				if (!reg_.test(path.basename(f))) {
+					var ff = path.dirname(f);
+					var _css = ff.split(path.sep);
+					var _css2 = _css.indexOf('postcss');
+					_css[_css2] = 'css';
+					_css = _css.slice(0, _css.length)
+					var _cssPath = _css.join(path.sep);
+
+
+					var _img = f.split(path.sep);
+					var _img2 = _img.indexOf('postcss');
+					_img[_img2] = 'images';
+					var _imgPath = _img.join(path.sep);
+					var cnn1 = path.basename(f);
+					var cnn2 = cnn1.split('.css');
+					var arrpath = path.dirname(f).split(path.sep);
+					var regv = /(v\d)(\.\d)+/;
+					if (regv.test(arrpath)) {
+						var cnn = cnn2[0] + '_' + path.basename(arrpath.join(path.sep)) + path.extname(cnn1);
+					} else {
+						var cnn = cnn2[0] + path.extname(cnn1);
+					}
+					_imgPath = path.dirname(_img.join(path.sep));
 
 
 
+					// html
+					// console.log('html------------------------------')
+
+					// _htmlPath = _cssPath.split(path.sep);
+					// var _htmlLen = _htmlPath.indexOf('css');
+					// _htmlPath[_htmlLen] = 'html';
 
 
+					// for (var a = 0; a < _htmlPath.length; a++) {
+					//     switch (_htmlPath[a]) {
+					//         case 'weixin':
+					//             _htmlPath[a] = '微信';
+					//             break;
+					//     }
+					// }
+					// var htmlpath = _htmlPath.join(path.sep);
+					// console.log(htmlpath)
+
+					// console.log('html------------------------------')
+
+					var mo = f.split(path.sep);
+					if (mo.indexOf('mobile') != -1) {
+						mode = 2;
+					} else {
+						mode = 1;
+					};
+
+					abimg = path.relative(path.dirname(f), path.dirname(_img.join(path.sep)))
+					abimg1 = path.relative(_cssPath, path.dirname(_img.join(path.sep)))
 
 
-var abimg,
-    abimg1,
-    mode;
-var htmlpath;
-var roop = process.cwd();
+					var data = new Date(),
+						curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
+						curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
+						curSec = data.getSeconds() < 10 ? ('0' + data.getSeconds()) : data.getSeconds(),
+						curMill = Math.ceil(data.getMilliseconds() / 10),
+						curMillis = curMill < 10 ? ('0' + curMill) : curMill;
+					time = '[' + curHour + ':' + curMinute + ':' + curSec + ':' + curMillis + '] ';
+					console.log(color.WATCH(color.red(time)) + f)
+					console.log(color.TIPS(color.red('[ 输出位置 ] ')) + path.join(_cssPath, cnn))
+					fs.readFile(f, function(err, data) {
+						var st = data;
+						var processors = [
+							atImport,
+							replaceImgPath,
+							precss,
+							 autoprefixer({
+								browsers: [
+									'last 9 versions'
+								]
+							}),
+							sprites({
+								stylesheetPath: _cssPath,
+								spritePath: _imgPath,
+								spritesmith: {
+									padding: 5
+								},
+								hooks: {
+									onUpdateRule: function(rule, token, image) {
+										var backgroundSizeX = (image.spriteWidth / image.coords.width) * 100;
+										var backgroundSizeY = (image.spriteHeight / image.coords.height) * 100;
+										var backgroundPositionX = (image.coords.x / (image.spriteWidth - image.coords.width)) * 100;
+										var backgroundPositionY = (image.coords.y / (image.spriteHeight - image.coords.height)) * 100;
 
-console.log(roop)
+										backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX.toFixed(3);
+										backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY.toFixed(3);
+										backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX.toFixed(3);
+										backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY.toFixed(3);
 
+										var backgroundImage = postcss.decl({
+											prop: 'background-image',
+											value: 'url(' + image.spriteUrl + ')'
+										});
 
-var roop2 = roop.split(path.sep);
-var roopl = roop2.indexOf('newStatic') + 1;
-var broo = roop2.slice(0, roopl).join(path.sep);
-chokidar.watch(broo, { ignored: /[\/\\]\./ }).on('all', (event, f) => {
-    if (event == 'change' && f.split(path.sep).indexOf('postcss') != -1) {
-        var reg_ = /^\_/
-        if (!reg_.test(path.basename(f))) {
-            var ff = path.dirname(f);
-            var _css = ff.split(path.sep);
-            var _css2 = _css.indexOf('postcss');
-            _css[_css2] = 'css';
-            _css = _css.slice(0, _css.length)
-            var _cssPath = _css.join(path.sep);
+										var backgroundSize = postcss.decl({
+											prop: 'background-size',
+											value: backgroundSizeX + '% ' + backgroundSizeY + '%'
+										});
 
+										var backgroundPosition = postcss.decl({
+											prop: 'background-position',
+											value: backgroundPositionX + '% ' + backgroundPositionY + '%'
+										});
 
-            var _img = f.split(path.sep);
-            var _img2 = _img.indexOf('postcss');
-            _img[_img2] = 'images';
-            var _imgPath = _img.join(path.sep);
-            var cnn1 = path.basename(f);
-            var cnn2 = cnn1.split('.css');
-            var arrpath = path.dirname(f).split(path.sep);
-            var regv = /(v\d)(\.\d)+/;
-            if (regv.test(arrpath)) {
-                var cnn = cnn2[0] + '_' + path.basename(arrpath.join(path.sep)) + path.extname(cnn1);
-            } else {
-                var cnn = cnn2[0] + path.extname(cnn1);
-            }
-            _imgPath = path.dirname(_img.join(path.sep));
+										var minSpriteWidth = postcss.decl({
+											prop: 'width',
+											value: (image.coords.width / mode) + 'px'
+										});
 
+										var minSpriteHeight = postcss.decl({
+											prop: 'height',
+											value: (image.coords.height / mode) + 'px'
+										});
+										var norepeat = postcss.decl({
+											prop: 'background-repeat',
+											value: 'no-repeat'
+										});
 
+										rule.insertAfter(token, backgroundImage);
+										rule.insertAfter(backgroundImage, backgroundPosition);
+										rule.insertAfter(backgroundPosition, backgroundSize);
+										rule.insertAfter(minSpriteWidth, minSpriteWidth);
+										rule.insertAfter(minSpriteHeight, minSpriteHeight);
+										rule.insertAfter(minSpriteHeight, minSpriteHeight);
+										rule.insertAfter(norepeat, norepeat);
+									}
+								},
+								groupBy: function(image) {
+									var reg = /((icon)-?([\w]*))/;
+									if (reg.test(image.url) === -1) {
+										return Promise.reject();
+									}
+									var a = reg.exec(image.url);
+									var c = image.url.split('/');
+									return Promise.resolve(c[c.length - 3]);
+								},
+								filterBy: function(image) {
+									if (!/((icon)-?([\w]*))/.test(image.url))
+										return Promise.reject();
+									return Promise.resolve();
+								}
+							}),
+							pxtorem,
+							mobilepx2,
+							cssnano,
+							postcssMedia,
+							cssMqpacker({
+								sort: function(a, b) {
+									return a.localeCompare(b);
+								}
+							}),
 
-            // html
-            // console.log('html------------------------------')
+							postcssSorting({
+								"sort-order": "yandex"
+							})
+							// opacity,
+							// crip,
+							// clean,
+						];
+						postcss(processors)
+							.process(st, { from: f, to: path.join(_cssPath, cnn) })
+							.then(function(result) {
+								fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+							}, function(error) {
+								console.log(color.red('[' + 'ERROR' + ']：'))
+								console.log(color.yellow('  ［文件］：' + error.file))
+								console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
+								console.log(color.yellow('  ［错误］：' + error.reason))
+							}).catch();
+					});
+				}
 
-            // _htmlPath = _cssPath.split(path.sep);
-            // var _htmlLen = _htmlPath.indexOf('css');
-            // _htmlPath[_htmlLen] = 'html';
+			}
+		});
+	}else{
+		console.log(color.ERROR(color.blue('请确保您的命令运行路径中包含newStatic & postcss目录')))
+		process.exit();
+	}
 
+}
 
-            // for (var a = 0; a < _htmlPath.length; a++) {
-            //     switch (_htmlPath[a]) {
-            //         case 'weixin':
-            //             _htmlPath[a] = '微信';
-            //             break;
-            //     }
-            // }
-            // var htmlpath = _htmlPath.join(path.sep);
-            // console.log(htmlpath)
+switch (program.rawArgs[program.rawArgs.length - 1]) {
+    case '-a':
+		var pa = process.cwd();
+		prompt(color.cyan('[INP]：') + '你是否要编译\n' + color.red(pa) + '\n目录下的'+ color.red('所有文件') +'吗？(y/n)：', (c) => {
+			if (c == 'y' || c == 'Y') {
+				all();
+			}
+		})
+    default:
+		dan();
+}
 
-            // console.log('html------------------------------')
-
-            var mo = f.split(path.sep);
-            if (mo.indexOf('mobile') != -1) {
-                mode = 2;
-            } else {
-                mode = 1;
-            };
-
-            abimg = path.relative(path.dirname(f), path.dirname(_img.join(path.sep)))
-            abimg1 = path.relative(_cssPath, path.dirname(_img.join(path.sep)))
-
-
-            var data = new Date(),
-                curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
-                curMinute = data.getMinutes() < 10 ? ('0' + data.getMinutes()) : data.getMinutes(),
-                curSec = data.getSeconds() < 10 ? ('0' + data.getSeconds()) : data.getSeconds(),
-                curMill = Math.ceil(data.getMilliseconds() / 10),
-                curMillis = curMill < 10 ? ('0' + curMill) : curMill;
-            time = '[' + curHour + ':' + curMinute + ':' + curSec + ':' + curMillis + '] ';
-            console.log(color.WATCH(color.red(time)) + f)
-            console.log(color.TIPS(color.red('[ 输出位置 ] ')) + path.join(_cssPath, cnn))
-            fs.readFile(f, function(err, data) {
-                var st = data;
-                var processors = [
-                    atImport,
-                    replaceImgPath,
-                    precss,
-                    autoprefixer({
-                        browsers: [
-                            'last 9 versions'
-                        ]
-                    }),
-                    sprites({
-                        stylesheetPath: _cssPath,
-                        spritePath: _imgPath,
-                        spritesmith: {
-                            padding: 5
-                        },
-                        hooks: {
-                            onUpdateRule: function(rule, token, image) {
-                                var backgroundSizeX = (image.spriteWidth / image.coords.width) * 100;
-                                var backgroundSizeY = (image.spriteHeight / image.coords.height) * 100;
-                                var backgroundPositionX = (image.coords.x / (image.spriteWidth - image.coords.width)) * 100;
-                                var backgroundPositionY = (image.coords.y / (image.spriteHeight - image.coords.height)) * 100;
-
-                                backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX.toFixed(3);
-                                backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY.toFixed(3);
-                                backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX.toFixed(3);
-                                backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY.toFixed(3);
-
-                                var backgroundImage = postcss.decl({
-                                    prop: 'background-image',
-                                    value: 'url(' + image.spriteUrl + ')'
-                                });
-
-                                var backgroundSize = postcss.decl({
-                                    prop: 'background-size',
-                                    value: backgroundSizeX + '% ' + backgroundSizeY + '%'
-                                });
-
-                                var backgroundPosition = postcss.decl({
-                                    prop: 'background-position',
-                                    value: backgroundPositionX + '% ' + backgroundPositionY + '%'
-                                });
-
-                                var minSpriteWidth = postcss.decl({
-                                    prop: 'width',
-                                    value: (image.coords.width / mode) + 'px'
-                                });
-
-                                var minSpriteHeight = postcss.decl({
-                                    prop: 'height',
-                                    value: (image.coords.height / mode) + 'px'
-                                });
-
-                                rule.insertAfter(token, backgroundImage);
-                                rule.insertAfter(backgroundImage, backgroundPosition);
-                                rule.insertAfter(backgroundPosition, backgroundSize);
-                                rule.insertAfter(minSpriteWidth, minSpriteWidth);
-                                rule.insertAfter(minSpriteHeight, minSpriteHeight);
-                            }
-                        },
-                        groupBy: function(image) {
-                            var reg = /((icon)-?([\w]*))/;
-                            if (reg.test(image.url) === -1) {
-                                return Promise.reject();
-                            }
-                            var a = reg.exec(image.url);
-                            var c = image.url.split(path.sep);
-                            return Promise.resolve(c[c.length - 3]);
-                        },
-                        filterBy: function(image) {
-                            if (!/((icon)-?([\w]*))/.test(image.url))
-                                return Promise.reject();
-                            return Promise.resolve();
-                        }
-                    }),
-                    pxtorem,
-                    mobilepx2,
-                    cssnano,
-                    postcssMedia,
-                    cssMqpacker({
-                        sort: function(a, b) {
-                            return a.localeCompare(b);
-                        }
-                    }),
-
-                    postcssSorting({
-                        "sort-order": "yandex"
-                    })
-                    // opacity,
-                    // crip,
-                    // clean,
-                ];
-                postcss(processors)
-                    .process(st, { from: f, to: path.join(_cssPath, cnn) })
-                    .then(function(result) {
-                        fs.writeFileSync(path.join(_cssPath, cnn), result.css);
-                    }, function(error) {
-                        console.log(color.red('[' + 'ERROR' + ']：'))
-                        console.log(color.yellow('  ［文件］：' + error.file))
-                        console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
-                        console.log(color.yellow('  ［错误］：' + error.reason))
-                    }).catch();
-            });
-        }
-
-    }
-});
