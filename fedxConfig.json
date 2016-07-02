@@ -1,0 +1,16 @@
+{
+    "name": "FEDX",
+    "mode": false,
+    "type": {
+        "mobile": "mobile",
+        "web": "pc"
+    },
+    "path": {
+        "rootPath": "newStatic",
+        "imagesPath": "images",
+        "postcssPath": "postcss",
+        "cssPath": "css",
+        "htmlPath": "html"
+    },
+    "imgmin": 70
+}
