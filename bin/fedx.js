@@ -4,8 +4,6 @@ var program = require('commander'),
     Promise = require("bluebird"),
     fs = require('fs'),
     path = require("path"),
-    color = require('bash-color'),
-    lineReader = require('line-reader'),
     postcss = require('postcss'),
     autoprefixer = require('autoprefixer'),
     cssnano = require('cssnano'),
@@ -16,16 +14,11 @@ var program = require('commander'),
     sprites = require('postcss-sprites').default,
     updateRule = require('postcss-sprites').updateRule,
     browserSync = require('browser-sync'),
-    http = require('http'),
     readdirp = require('readdirp'),
-    json = require('JSONStream'),
-    util = require('util'),
     rd = require('rd'),
     request = require('request'),
     ip = require('ip'),
     ipn = ip.address(),
-    Q = require('q'),
-    Qd = Q.defer(),
     atImport = require("postcss-import"),
     chokidar = require('chokidar');
 
@@ -38,9 +31,14 @@ var config = {
     ignor: [
         /node_modules/,
         /[\/\\]\./
-    ]
+    ],
+    limit: false,
+    tipNum: 100
 }
 
+
+var abimg1,
+    mode;
 
 // 颜色
 var color = {
@@ -117,6 +115,11 @@ var flow = (str) => {
         console.log(color.yellow('[FLOW] >>> ' + str));
 }
 
+var tipsFn = function(callback) {
+    if (!config.limit) {
+        callback();
+    }
+}
 
 
 
@@ -147,11 +150,6 @@ var flow = (str) => {
 
 
 
-// fs.readFileSync('./template/config/fedxConfig.json', function(err, data) {
-//     var configData = JSON.parse(data);
-// })
-
-
 
 
 // 参数判断
@@ -173,6 +171,9 @@ var flow = (str) => {
 var Fedx = function() {};
 // 检测文件是否存在
 var FEDX = new Fedx();
+
+
+
 Fedx.prototype.isExist = function() {
     console.log('cunzai');
 }
@@ -191,13 +192,38 @@ Fedx.prototype.fsReadFile = function(file, type) {
 
 // 写文件
 Fedx.prototype.fsWriteFile = function(file, data, cur) {
-        fs.writeFile(file, data, (err) => {
-            if (err) throw err;
-            if (!!cur)
-                console.log(data);
+    fs.writeFile(file, data, (err) => {
+        if (err) throw err;
+        if (!!cur)
+            console.log(data);
+    });
+}
+
+// 创建目录
+Fedx.prototype.mkdirs = function(path, callback) {
+    var dirs = path.slice(1).split("/");
+    var i = 0;
+
+    var mk = function(err) {
+        i += 1;
+        if (i > dirs.length) {
+            callback(err);
+            return;
+        }
+        fs.mkdir('/' + dirs.slice(0, i).join('/'), function(err) {
+            mk(err);
         });
-    }
-    // 时间
+    };
+    mk();
+}
+
+
+
+
+
+var getConfig = FEDX.fsReadFile(path.join(__dirname, '../fedxConfig.json'), 'json');
+
+// 时间
 Fedx.prototype.tipsTime = function() {
         var data = new Date(),
             curHour = data.getHours() < 10 ? ('0' + data.getHours()) : data.getHours(),
@@ -205,7 +231,7 @@ Fedx.prototype.tipsTime = function() {
             curSec = data.getSeconds() < 10 ? ('0' + data.getSeconds()) : data.getSeconds(),
             curMill = Math.ceil(data.getMilliseconds() / 10),
             curMillis = curMill < 10 ? ('0' + curMill) : curMill;
-        return '[' + curHour + ':' + curMinute + ':' + curSec + ':' + curMillis + '] ';
+        return '[' + color.black(curHour + ':' + curMinute + ':' + curSec + ':' + curMillis  ) + '] ';
     }
     // 裁剪路径
 Fedx.prototype.slicePath = function(f, str) {
@@ -215,11 +241,82 @@ Fedx.prototype.slicePath = function(f, str) {
     }
     // 替换路径
 Fedx.prototype.replacePath = function(f, str) {
+        var _pathArr = f.split(path.sep),
+            _pathIndex = _pathArr.indexOf(getConfig.path.postcssPath);
+        _pathArr[_pathIndex] = str;
+        return path.dirname(_pathArr.join(path.sep));
+    }
+    // 对象拷贝
+Fedx.prototype.deepCopy = function(source) {
+    var deepCopy = function(source) {
+        var result = {};
+        for (var key in source) {
+            result[key] = typeof source[key] === 'object' ? deepCoyp(source[key]) : source[key];
+        }
+        return result;
+    }
+}
+
+// 计算tips显示次数
+Fedx.prototype.tipsNumber = function() {
+    if (getConfig.tipNumber <= config.tipNum) {
+        tipsFn(function() {
+            // console.log(Array(100).join('='));
+            // console.log(color.green('\t' + '为了让大家更快熟悉编译流程， 在部分环节做了提示性操作， 使用一段时间， 将会自动消失 '));
+        })
+        var _deepCopy = getConfig;
+        _deepCopy.tipNumber++;
+        FEDX.fsWriteFile(path.join(__dirname, '../fedxConfig.json'), JSON.stringify(_deepCopy), false);
+    } else {
+        config.limit = true
+    }
+}
+FEDX.tipsNumber();
+Fedx.prototype.replacePath = function(f, str) {
     var _pathArr = f.split(path.sep),
         _pathIndex = _pathArr.indexOf(getConfig.path.postcssPath);
     _pathArr[_pathIndex] = str;
     return path.dirname(_pathArr.join(path.sep));
 }
+
+// html路径查找
+Fedx.prototype.htmlPath = function(f, str) {
+    var _pathArr = f.split(path.sep);
+    var indedx = _pathArr.indexOf(getConfig.path.postcssPath);
+    _pathArr[indedx] = getConfig.path.htmlPath;
+    switch (_pathArr[indedx + 1]) {
+        case "weixin":
+            _pathArr[indedx + 1] = '微信';
+            break;
+    }
+    var htmlTypeIndex = _pathArr.indexOf(_pathArr[indedx + 2]);
+    var htmlRootpath = _pathArr.slice(0, htmlTypeIndex).join(path.sep);
+    console.log('\n' + color.TIPS(':我找到以下文件与您当前修改的样式文件匹配') + '\n');
+    tipsFn(function() {
+        console.log('\t' + '稍后我会帮您在浏览器打开（同时会为您开启一个本地server，方便您的调试）');
+        console.log('\t' + '如果您希望快速浏览您html文件（windows平台，请使用' + color.yellow('git') + '运行此命令｜ Macos平台， 请使用' + color.yellow('iTerm') + '运行） ');
+        console.log('\t' + 'windows按下' + color.yellow('Alt') + '点击下方路径即可打开');
+        console.log('\t' + 'Macos按下' + color.yellow('command') + '点击下方路径即可打开');
+        console.log();
+    })
+    rd.eachSync(htmlRootpath, function(file, s) {
+        if (path.extname(file) == '.html') {
+            var strHtml = FEDX.fsReadFile(file, 'string').toString();
+            var reg = new RegExp(str);
+            if (reg.test(strHtml)) {
+                // console.log(FEDX.slicePath(file, getConfig.path.rootPath));
+                console.log(file);
+                console.log(Array(file.length + 20).join('-'));
+                // console.log(path.dirname(file));
+                //
+            }
+        }
+    });
+
+}
+
+
+
 
 // 文件添加版本号
 Fedx.prototype.addFileVersion = function(f) {
@@ -235,116 +332,20 @@ Fedx.prototype.addFileVersion = function(f) {
 
 
 
-
-
-
-// Fedx.prototype.fsWatchFile = function(setPath, setIgnor, ev, callback) {
-//     chokidar.watch(path.join(setPath), { ignored: setIgnor }).on(ev, (event, f) => {
-//         callback(f);
-//     })
-// }
-
-// function dan() {
-//     console.log(f + '------');
-// }
-
-// FEDX.fsWatchFile(process.cwd(), config.ignor, 'all', dan())
-
-
-
-
-
-
-
-
-
-
-// function a(ev) {
-
-//     chokidar.watch(process.cwd(), { ignored: config.ignor }).on('all', (event, f) => {
-//         var fileArr = f;
-//         if (event == 'add') {
-//             // console.log(FEDX.tipsTime() + '\t' + color.red('build') + '\t' + f);
-//             // console.log();
-//         } else if (event == 'change') {
-//             console.log(FEDX.tipsTime() + '\t' + color.blue('change') + '\t' + f);
-//             console.log();
-//              // a(ev)
-//              console.log(fileArr);
-//         }
-
-//     })
-// }
-
-// a('all')
-
-
-
-// rd.read(process.cwd(), function (err, files) {
-//   if (err) throw err;
-//   // files是一个数组，里面是目录/tmp目录下的所有文件（包括子目录）
-//   console.log(files);
-// });
-
-var getConfig = FEDX.fsReadFile(path.join(__dirname, '../fedxConfig.json'), 'json');
-
-
-function build() {
-    flow('读取配置文件');
-    var curPath = process.cwd();
-    var _path = curPath.split(path.sep);
-    flow('判断运行目录是否为跟目录');
-    if (new RegExp(getConfig.path.rootPath).test(_path)) {
-        flow('监听文件');
-        chokidar.watch(process.cwd(), { ignored: config.ignor }).on('all', (event, f) => {
-            if (event == 'change') {
-                var changeFile = f.split(path.sep);
-                var ff = f;
-                if (new RegExp(getConfig.path.postcssPath).test(changeFile)) {
-                    rd.eachSync(path.dirname(f), function(f, s) {
-                        if (path.extname(f) == '.css') {
-                            (f == ff) ?
-                            (console.log(FEDX.tipsTime() + '\t' + color.yellow(event) + '\t' + FEDX.slicePath(f, getConfig.path.rootPath))) :
-                            (console.log(FEDX.tipsTime() + '\t' + color.blue('Build') + '\t' + FEDX.slicePath(f, getConfig.path.rootPath)));
-                            (function(f) {
-                                postcssBuild(f)
-                            })(f)
-                        }
-                    })
-                }
-            }
-        })
-    } else {
-        console.log(color.ERROR('请在' + color.red('[ ' + getConfig.path.rootPath + ' ]')) + '目录下运行命令！');
-    }
-}
-build()
-
-
-function css(f) {
-    console.log(f);
-}
-
-
-
-
-
-
 // 自定义postcss函数函数函数函数
-function mobilepx2(css) {
-    flow('已开启移动端px单位除2功能')
-    css.walkRules(function(rule) {
-        rule.walkDecls(function(decl, i) {
-            decl.value = decl.value.replace(/(\d*\.?\d+)pm/ig, function(str) {
-                return (parseFloat(str) / 2) + 'px';
+Fedx.prototype.mobilepx2 = function(css) {
+        flow('已开启移动端px单位除2功能')
+        css.walkRules(function(rule) {
+            rule.walkDecls(function(decl, i) {
+                decl.value = decl.value.replace(/(\d*\.?\d+)pm/ig, function(str) {
+                    return (parseFloat(str) / 2) + 'px';
+                })
+
             })
-
-        })
-    });
-}
-
-// 自定义postcss插件rem
-function pxtorem(css) {
+        });
+    }
+    // 自定义postcss插件rem
+Fedx.prototype.pxtorem = function(css) {
     flow('已开启pm转换rem')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
@@ -355,43 +356,50 @@ function pxtorem(css) {
     });
 }
 
+
+
+
 // 重复字段
-function str_repeat(str, num) {
+Fedx.prototype.str_repeat = function(str, num) {
     return new Array(num).join(str);
 }
 
-var i1;
 // 自定义postcss插件替换路径
-function replaceImgPath(css) {
-    flow('已开启postcss图片相对路径处理')
-    css.walkRules(function(rule) {
-        rule.walkDecls(function(decl, i) {
-            i1 += i;
-            decl.value = decl.value.replace(/url\(.*\)/, function(str) {
-                var cssFile = decl.source.input.file;
-                if (path.basename(cssFile) == 'common.css') {
-                    var _abimg1 = abimg1.split('/');
-                    var _abimgIndex = _abimg1.indexOf('images');
-                    var _imgpath = _abimg1.slice(0, _abimgIndex).join('/') + '/';
-                    var st = str.replace('url(../images/', '')
-                    var c1 = st.split('/');
-                    var c2 = c1.slice(0, c1.length - 1)
-                    str = 'url(' + _imgpath + str.slice(7, str.length - 1) + ')';
-                    return str;
-                } else {
-                    var st = str.replace('url(', '')
-                    var c1 = st.split('/');
-                    var c2 = c1.slice(0, c1.length - 1)
-                    str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
-                    return str;
-                }
+Fedx.prototype.replaceImgPath = function(css) {
+        flow('已开启postcss图片相对路径处理')
+        css.walkRules(function(rule) {
+            rule.walkDecls(function(decl, i) {
+                decl.value = decl.value.replace(/url\(.*\)/, function(str) {
+					var rega = /\.\.\//;
+					if(!rega.test(str)){
+                        var st = str.replace('url(', '')
+                        var c1 = st.split('/');
+                        var c2 = c1.slice(0, c1.length - 1)
+                        str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
+                        return str;
+					}else{
+                        return str;
+					}
 
+//                     var cssFile = decl.source.input.file;
+//                     if (path.basename(cssFile) == 'common.css') {
+//                         var _abimg1 = abimg1.split('/');
+//                         var _abimgIndex = _abimg1.indexOf('images');
+//                         var _imgpath = _abimg1.slice(0, _abimgIndex).join('/') + '/';
+//                         var st = str.replace('url(../images/', '')
+//                         var c1 = st.split('/');
+//                         var c2 = c1.slice(0, c1.length - 1)
+//                         str = 'url(' + _imgpath + str.slice(7, str.length - 1) + ')';
+//                         return str;
+//                     } else {
+//                     }
+
+                })
             })
-        })
-    });
-}
-
-function postcssMedia(css) {
+        });
+    }
+    // 媒体查询简写
+Fedx.prototype.postcssMedia = function(css) {
     flow('已开启媒体查询识别功能')
     css.walkRules(function(rule) {
         rule.walkDecls(function(decl, i) {
@@ -440,35 +448,30 @@ function postcssMedia(css) {
 
 
 
+function postcssBuild(fe) {
 
-
-
-
-function postcssBuild(f) {
-    var abimg1,
-        mode;
-    if (!(new RegExp(/^\_/)).test(path.basename(f))) {
-        var pathSplit = f.split(path.sep),
-            _cssPath = FEDX.replacePath(f, 'css'),
-            _imgPath = FEDX.replacePath(f, 'images'),
-            cnn = FEDX.addFileVersion(f);
+    if (!(new RegExp(/^\_/)).test(path.basename(fe))) {
+        var pathSplit = fe.split(path.sep),
+            _cssPath = FEDX.replacePath(fe, 'css'),
+            _imgPath = FEDX.replacePath(fe, 'images'),
+            cnn = FEDX.addFileVersion(fe);
         mode = (new RegExp(getConfig.type.mobile).test(pathSplit)) ? 2 : 1;
-        abimg1 = path.relative(_cssPath, f)
-        var cssStr = FEDX.fsReadFile(f, 'string');
+        abimg1 = path.relative(_cssPath, _imgPath)
+        var cssStr = FEDX.fsReadFile(fe, 'string');
         var processors = [
             atImport,
-            // replaceImgPath,
+            FEDX.replaceImgPath,
             precss,
             autoprefixer({
                 browsers: [
                     'last 9 versions'
                 ]
             }),
-            // sprites(spritesOption(_cssPath, _imgPath)),
-            pxtorem,
-            mobilepx2,
+            sprites(spritesOption(_cssPath, _imgPath)),
+            FEDX.pxtorem,
+            FEDX.mobilepx2,
             cssnano,
-            postcssMedia,
+            FEDX.postcssMedia,
             cssMqpacker({
                 sort: function(a, b) {
                     return a.localeCompare(b);
@@ -482,15 +485,30 @@ function postcssBuild(f) {
             // clean,
         ];
         postcss(processors)
-            .process(cssStr, { from: f, to: path.join(_cssPath, cnn) })
+            .process(cssStr, { from: fe, to: path.join(_cssPath, cnn) })
             .then(function(result) {
+                fs.exists(path.join(_cssPath), function(exists, result) {
+                    if (!exists) {
+                        FEDX.mkdirs(path.join(_cssPath), function(err) {
+                            console.log(err);
+                        });
+                    }
+                });
                 fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+
+                var _htmlcssPath = path.join(_cssPath, cnn);
+                var le = _htmlcssPath.split(path.sep);
+                var aa = le.indexOf(getConfig.path.rootPath);
+                // var aa = le.indexOf(getConfig.path.rootPath);
+                var _cssHtmlStr = le.slice([aa + 2], le.length).join('/');
+
+                // FEDX.htmlPath(fe , _cssHtmlStr)
+
             }, function(error) {
                 console.log(color.red('[' + 'ERROR' + ']：'))
                 console.log(color.yellow('  ［文件］：' + error.file))
                 console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
                 console.log(color.yellow('  ［错误］：' + error.reason))
-
             }).catch();
     }
 };
@@ -568,3 +586,58 @@ function spritesOption(csspath, imgpath) {
         }
     }
 }
+
+function build() {
+    flow('读取配置文件');
+    var curPath = process.cwd();
+    var _path = curPath.split(path.sep);
+
+
+    // var bs = require("browser-sync").create();
+
+    // bs.watch("*.html").on("change", bs.reload);
+
+    // bs.watch("css/*.css", function(event, file) {
+    //     if (event === "change") {
+    //         bs.reload("*.css");
+    //     }
+    // });
+
+    // bs.init({
+    //     server: {
+    //         baseDir: FEDX.replacePath(curPath, 'html'),
+    //         directory: true
+    //     },
+    //     open: 'external'
+    // });
+    flow('判断运行目录是否为跟目录');
+    if (new RegExp(getConfig.path.rootPath).test(_path)) {
+        flow('监听文件');
+        chokidar.watch(process.cwd(), { ignored: config.ignor }).on('all', (event, f) => {
+            var _event = event;
+            if (event == 'change') {
+                var changeFile = f.split(path.sep);
+                if (new RegExp(getConfig.path.postcssPath).test(changeFile)) {
+                    changeFile = f.split(path.sep);
+                    var allFile = f;
+                    var watchPathIndex = changeFile.indexOf(getConfig.path.postcssPath) + 3;
+                    var watchPath = changeFile.slice(0, watchPathIndex).join(path.sep);
+                    rd.eachSync(path.join(watchPath), function(fe, s) {
+                        if (path.extname(fe) == '.css') {
+
+                            if (fe == allFile) {
+                                console.log(FEDX.tipsTime() + '\t' + color.yellow(event) + '\t' + FEDX.slicePath(fe, getConfig.path.rootPath))
+                            } else {
+                                console.log(FEDX.tipsTime() + '\t' + color.blue('Build') + '\t' + FEDX.slicePath(fe, getConfig.path.rootPath))
+                            }
+                            postcssBuild(fe)
+                        }
+                    })
+                }
+            }
+        })
+    } else {
+        console.log(color.ERROR('请在' + color.red('[ ' + getConfig.path.rootPath + ' ]')) + '目录下运行命令！');
+    }
+}
+build()
