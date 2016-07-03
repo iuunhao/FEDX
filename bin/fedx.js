@@ -26,7 +26,6 @@ var program = require('commander'),
     ipn = ip.address(),
     Q = require('q'),
     Qd = Q.defer(),
-    flowCur = false,
     atImport = require("postcss-import"),
     chokidar = require('chokidar');
 
@@ -37,7 +36,7 @@ var program = require('commander'),
 var config = {
     flowCur: false,
     ignor: [
-        /mobile/,
+        /node_modules/,
         /[\/\\]\./
     ]
 }
@@ -216,11 +215,13 @@ Fedx.prototype.slicePath = function(f, str) {
     }
     // 替换路径
 Fedx.prototype.replacePath = function(f, str) {
-        var _pathArr = f.split(path.sep),
-            _pathIndex = _pathArr.indexOf(getConfig.path.postcssPath);
-        return _pathArr[_pathIndex] = str;
-    }
-    // 文件添加版本号
+    var _pathArr = f.split(path.sep),
+        _pathIndex = _pathArr.indexOf(getConfig.path.postcssPath);
+    _pathArr[_pathIndex] = str;
+    return path.dirname(_pathArr.join(path.sep));
+}
+
+// 文件添加版本号
 Fedx.prototype.addFileVersion = function(f) {
     var fileName = path.basename(f, '.css'),
         _pathArr = path.dirname(f).split(path.sep),
@@ -230,7 +231,6 @@ Fedx.prototype.addFileVersion = function(f) {
     } else {
         return path.basename(f)
     }
-
 }
 
 
@@ -291,7 +291,6 @@ var getConfig = FEDX.fsReadFile(path.join(__dirname, '../fedxConfig.json'), 'jso
 
 function build() {
     flow('读取配置文件');
-
     var curPath = process.cwd();
     var _path = curPath.split(path.sep);
     flow('判断运行目录是否为跟目录');
@@ -303,9 +302,7 @@ function build() {
                 var ff = f;
                 if (new RegExp(getConfig.path.postcssPath).test(changeFile)) {
                     rd.eachSync(path.dirname(f), function(f, s) {
-                        var reg = /^\./;
-                        var reg2 = /\./;
-                        if (!reg.test(path.basename(f)) && reg2.test(path.basename(f))) {
+                        if (path.extname(f) == '.css') {
                             (f == ff) ?
                             (console.log(FEDX.tipsTime() + '\t' + color.yellow(event) + '\t' + FEDX.slicePath(f, getConfig.path.rootPath))) :
                             (console.log(FEDX.tipsTime() + '\t' + color.blue('Build') + '\t' + FEDX.slicePath(f, getConfig.path.rootPath)));
@@ -447,105 +444,27 @@ function postcssMedia(css) {
 
 
 
-
-
-
 function postcssBuild(f) {
     var abimg1,
         mode;
-
-    var reg_ = /^\_/;
-    if (!reg_.test(path.basename(f))) {
+    if (!(new RegExp(/^\_/)).test(path.basename(f))) {
         var pathSplit = f.split(path.sep),
             _cssPath = FEDX.replacePath(f, 'css'),
             _imgPath = FEDX.replacePath(f, 'images'),
             cnn = FEDX.addFileVersion(f);
-
         mode = (new RegExp(getConfig.type.mobile).test(pathSplit)) ? 2 : 1;
-
         abimg1 = path.relative(_cssPath, f)
-
         var cssStr = FEDX.fsReadFile(f, 'string');
         var processors = [
             atImport,
-            replaceImgPath,
+            // replaceImgPath,
             precss,
             autoprefixer({
                 browsers: [
                     'last 9 versions'
                 ]
             }),
-            sprites({
-                stylesheetPath: _cssPath,
-                spritePath: _imgPath,
-                spritesmith: {
-                    padding: 5
-                },
-                hooks: {
-                    onUpdateRule: function(rule, token, image) {
-                        var backgroundSizeX = (image.spriteWidth / image.coords.width) * 100;
-                        var backgroundSizeY = (image.spriteHeight / image.coords.height) * 100;
-                        var backgroundPositionX = (image.coords.x / (image.spriteWidth - image.coords.width)) * 100;
-                        var backgroundPositionY = (image.coords.y / (image.spriteHeight - image.coords.height)) * 100;
-
-                        backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX.toFixed(3);
-                        backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY.toFixed(3);
-                        backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX.toFixed(3);
-                        backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY.toFixed(3);
-
-                        var backgroundImage = postcss.decl({
-                            prop: 'background-image',
-                            value: 'url(' + image.spriteUrl + ')'
-                        });
-
-                        var backgroundSize = postcss.decl({
-                            prop: 'background-size',
-                            value: backgroundSizeX + '% ' + backgroundSizeY + '%'
-                        });
-
-                        var backgroundPosition = postcss.decl({
-                            prop: 'background-position',
-                            value: backgroundPositionX + '% ' + backgroundPositionY + '%'
-                        });
-
-                        var minSpriteWidth = postcss.decl({
-                            prop: 'width',
-                            value: (image.coords.width / mode) + 'px'
-                        });
-
-                        var minSpriteHeight = postcss.decl({
-                            prop: 'height',
-                            value: (image.coords.height / mode) + 'px'
-                        });
-                        var norepeat = postcss.decl({
-                            prop: 'background-repeat',
-                            value: 'no-repeat'
-                        });
-
-                        rule.insertAfter(token, backgroundImage);
-                        rule.insertAfter(backgroundImage, backgroundPosition);
-                        rule.insertAfter(backgroundPosition, backgroundSize);
-                        rule.insertAfter(minSpriteWidth, minSpriteWidth);
-                        rule.insertAfter(minSpriteHeight, minSpriteHeight);
-                        rule.insertAfter(minSpriteHeight, minSpriteHeight);
-                        rule.insertAfter(norepeat, norepeat);
-                    }
-                },
-                groupBy: function(image) {
-                    var reg = /((icon)-?([\w]*))/;
-                    if (reg.test(image.url) === -1) {
-                        return Promise.reject();
-                    }
-                    var a = reg.exec(image.url);
-                    var c = image.url.split('/');
-                    return Promise.resolve(c[c.length - 3]);
-                },
-                filterBy: function(image) {
-                    if (!/((icon)-?([\w]*))/.test(image.url))
-                        return Promise.reject();
-                    return Promise.resolve();
-                }
-            }),
+            // sprites(spritesOption(_cssPath, _imgPath)),
             pxtorem,
             mobilepx2,
             cssnano,
@@ -555,7 +474,6 @@ function postcssBuild(f) {
                     return a.localeCompare(b);
                 }
             }),
-
             postcssSorting({
                 "sort-order": "yandex"
             })
@@ -572,9 +490,81 @@ function postcssBuild(f) {
                 console.log(color.yellow('  ［文件］：' + error.file))
                 console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
                 console.log(color.yellow('  ［错误］：' + error.reason))
+
             }).catch();
     }
-
-
-
 };
+
+function spritesOption(csspath, imgpath) {
+    return {
+        stylesheetPath: csspath,
+        spritePath: imgpath,
+        spritesmith: {
+            padding: 10
+        },
+        hooks: {
+            onUpdateRule: function(rule, token, image) {
+                var backgroundSizeX = (image.spriteWidth / image.coords.width) * 100;
+                var backgroundSizeY = (image.spriteHeight / image.coords.height) * 100;
+                var backgroundPositionX = (image.coords.x / (image.spriteWidth - image.coords.width)) * 100;
+                var backgroundPositionY = (image.coords.y / (image.spriteHeight - image.coords.height)) * 100;
+
+                backgroundSizeX = isNaN(backgroundSizeX) ? 0 : backgroundSizeX.toFixed(3);
+                backgroundSizeY = isNaN(backgroundSizeY) ? 0 : backgroundSizeY.toFixed(3);
+                backgroundPositionX = isNaN(backgroundPositionX) ? 0 : backgroundPositionX.toFixed(3);
+                backgroundPositionY = isNaN(backgroundPositionY) ? 0 : backgroundPositionY.toFixed(3);
+
+                var backgroundImage = postcss.decl({
+                    prop: 'background-image',
+                    value: 'url(' + image.spriteUrl + ')'
+                });
+
+                var backgroundSize = postcss.decl({
+                    prop: 'background-size',
+                    value: backgroundSizeX + '% ' + backgroundSizeY + '%'
+                });
+
+                var backgroundPosition = postcss.decl({
+                    prop: 'background-position',
+                    value: backgroundPositionX + '% ' + backgroundPositionY + '%'
+                });
+
+                var minSpriteWidth = postcss.decl({
+                    prop: 'width',
+                    value: (image.coords.width / mode) + 'px'
+                });
+
+                var minSpriteHeight = postcss.decl({
+                    prop: 'height',
+                    value: (image.coords.height / mode) + 'px'
+                });
+                var norepeat = postcss.decl({
+                    prop: 'background-repeat',
+                    value: 'no-repeat'
+                });
+
+                rule.insertAfter(token, backgroundImage);
+                rule.insertAfter(backgroundImage, backgroundPosition);
+                rule.insertAfter(backgroundPosition, backgroundSize);
+                rule.insertAfter(minSpriteWidth, minSpriteWidth);
+                rule.insertAfter(minSpriteHeight, minSpriteHeight);
+                rule.insertAfter(minSpriteHeight, minSpriteHeight);
+                rule.insertAfter(norepeat, norepeat);
+            }
+        },
+        groupBy: function(image) {
+            var reg = /((icon)-?([\w]*))/;
+            if (reg.test(image.url) === -1) {
+                return Promise.reject();
+            }
+            var a = reg.exec(image.url);
+            var c = image.url.split('/');
+            return Promise.resolve(c[c.length - 3]);
+        },
+        filterBy: function(image) {
+            if (!/((icon)-?([\w]*))/.test(image.url))
+                return Promise.reject();
+            return Promise.resolve();
+        }
+    }
+}
