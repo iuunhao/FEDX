@@ -24,6 +24,16 @@ var program = require('commander'),
     chokidar = require('chokidar');
 
 
+program
+    .version(require('../package.json').version)
+    .usage('[options] [Pattern type]')
+    .option('-a, --all ', '编译之前版本')
+    .parse(process.argv);
+// var pname = program.args[0]
+
+
+
+
 // 配置
 var config = {
     flowCur: false,
@@ -32,7 +42,7 @@ var config = {
         /[\/\\]\./
     ],
     limit: false,
-    tipNum: 100
+    tipNum: 1000
 }
 
 var bs = require("browser-sync").create(),
@@ -189,9 +199,6 @@ Fedx.prototype.mkdirs = function(path, callback) {
 }
 
 
-
-
-
 var getConfig = FEDX.fsReadFile(path.join(__dirname, '../fedxConfig.json'), 'json');
 
 // 时间
@@ -259,39 +266,60 @@ Fedx.prototype.htmlPath = function(f, str) {
     switch (_pathArr[indedx + 1]) {
         case "weixin":
             _pathArr[indedx + 1] = '微信';
+            _pathArr = _pathArr.slice(0, indedx + 2);
+            htmlP();
             break;
         case "gupiao":
             _pathArr[indedx + 1] = '股票';
+            _pathArr = _pathArr.slice(0, indedx + 2);
+            htmlP();
             break;
         case "extension":
             _pathArr[indedx + 1] = '活动';
+            _pathArr = _pathArr.slice(0, indedx + 2);
+            htmlP();
             break;
-        case "licaishi":
-            _pathArr[indedx + 1] = '理财师';
+        case "lianchu":
+            _pathArr[indedx + 1] = '联储';
+            _pathArr = _pathArr.slice(0, indedx + 2);
+            htmlP();
             break;
         case "mirroring":
             _pathArr[indedx + 1] = '镜像';
+            _pathArr = _pathArr.slice(0, indedx + 2);
+            htmlP();
+            break;
+        default:
+            console.log('由于当前项目属于新类型项目，无法获取html路径。');
             break;
     }
-    console.log('\n' + color.TIPS(':我找到以下文件与您当前修改的样式文件匹配') + '\n');
-    bs.watch(process.cwd() + '**/*', function(event, file) {
-        bs.reload()
-    });
 
-    rd.eachSync(_pathArr.join(path.sep), function(file, s) {
-        if (path.extname(file) == '.html') {
-            var strHtml = FEDX.fsReadFile(file, 'string').toString(),
-                reg = new RegExp(s);
-            if (reg.test(strHtml)) {
-                var itemFileName = file.split(path.sep),
-                    itemIndex = itemFileName.indexOf(getConfig.path.rootPath),
-                    serverScile = itemFileName.slice(itemIndex + 1, itemFileName.length).join(path.sep);
-                serverScile.replace(/\\/, '/');
-                console.log('http://' + ipn + ':' + 3000 + '/' + serverScile)
-                console.log(Array(file.length + 20).join('-'));
+
+    function htmlP() {
+        console.log('\n' + color.TIPS(':我找到以下文件与您当前修改的样式文件匹配') + '\n');
+        bs.watch(process.cwd() + '**/*', function(event, file) {
+            bs.reload()
+        });
+        console.log(_pathArr.join(path.sep))
+        rd.eachSync(_pathArr.join(path.sep), function(file, s) {
+            if (path.extname(file) == '.html') {
+                var strHtml = FEDX.fsReadFile(file, 'string').toString(),
+                    reg = new RegExp(s);
+                if (reg.test(strHtml)) {
+                    var itemFileName = file.split(path.sep),
+                        itemIndex = itemFileName.indexOf(getConfig.path.rootPath);
+                    if (os.platform() != "win32") {
+                        var serverScile = itemFileName.slice(itemIndex + 2, itemFileName.length).join(path.sep);
+                    } else {
+                        var serverScile = itemFileName.slice(itemIndex + 1, itemFileName.length).join(path.sep);
+                    }
+                    serverScile.replace(/\\/, '/');
+                    console.log('http://' + ipn + ':' + 3000 + '/' + serverScile)
+                    console.log(Array(file.length + 20).join('-'));
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 
@@ -335,13 +363,12 @@ Fedx.prototype.pxtorem = function(css) {
     });
 }
 
-
-
-
 // 重复字段
 Fedx.prototype.str_repeat = function(str, num) {
     return new Array(num).join(str);
 }
+
+
 
 // 自定义postcss插件替换路径
 Fedx.prototype.replaceImgPath = function(css) {
@@ -354,8 +381,16 @@ Fedx.prototype.replaceImgPath = function(css) {
                         var st = str.replace('url(', '')
                         var c1 = st.split('/');
                         var c2 = c1.slice(0, c1.length - 1)
-                        str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
-                        return str;
+                        var l_str = abimg1.split(path.sep);
+                        var l_index = l_str.indexOf('images');
+                        var l_c_str = l_str.slice(0, l_index + 1).join('/');
+                        if (program.all) {
+                            str = 'url(' + abimg1 + '/' + str.slice(4, str.length - 1) + ')';
+                            return str;
+                        } else {
+                            str = 'url(' + l_c_str + '/' + str.slice(4, str.length - 1) + ')';
+                            return str;
+                        }
                     } else {
                         return str;
                     }
@@ -414,7 +449,7 @@ function postcssBuild(fe) {
             _imgPath = FEDX.replacePath(fe, 'images'),
             cnn = FEDX.addFileVersion(fe);
         mode = (new RegExp(getConfig.type.mobile).test(pathSplit)) ? 2 : 1;
-        abimg1 = path.relative(_cssPath, _imgPath)
+        abimg1 = path.relative(_cssPath, _imgPath);
         var cssStr = FEDX.fsReadFile(fe, 'string');
         var processors = [
             atImport,
@@ -443,9 +478,11 @@ function postcssBuild(fe) {
             // clean,
         ];
         postcss(processors)
-            .process(cssStr, { from: fe, to: path.join(_cssPath, cnn) })
+            .process(cssStr, {
+                from: fe,
+                to: path.join(_cssPath, cnn)
+            })
             .then(function(result) {
-
                 if (os.platform() != "win32") {
                     fs.exists(path.join(_cssPath), function(exists, result) {
                         if (!exists) {
@@ -455,7 +492,7 @@ function postcssBuild(fe) {
                         }
                     })
                 }
-                fs.writeFileSync(path.join(_cssPath, cnn), result.cssFloat);
+                fs.writeFileSync(path.join(_cssPath, cnn), result.css);
             }, function(error) {
                 console.log(color.red('[' + 'ERROR' + ']：'))
                 console.log(color.yellow('  ［文件］：' + error.file))
@@ -523,7 +560,6 @@ function spritesOption(csspath, imgpath) {
                 rule.insertAfter(backgroundPosition, backgroundSize);
                 rule.insertAfter(minSpriteWidth, minSpriteWidth);
                 rule.insertAfter(minSpriteHeight, minSpriteHeight);
-                rule.insertAfter(minSpriteHeight, minSpriteHeight);
                 rule.insertAfter(norepeat, norepeat);
             }
         },
@@ -534,8 +570,13 @@ function spritesOption(csspath, imgpath) {
             }
             var a = reg.exec(image.url);
             var c = image.url.split('/');
-            var nameSlice = c[c.length - 3] + c[c.length - 2];
-            return Promise.resolve(nameSlice.replace(/icon/, ''));
+            if (program.all) {
+                var nameSlice = c[c.length - 3] + c[c.length - 2];
+                return Promise.resolve(nameSlice.replace(/icon/, ''));
+            } else {
+                var nameSlice = c[c.length - 2];
+                return Promise.resolve(nameSlice);
+            }
         },
         filterBy: function(image) {
             if (!/((icon)-?([\w]*))/.test(image.url))
@@ -554,7 +595,9 @@ function build() {
     flow('判断运行目录是否为跟目录');
     if (new RegExp(getConfig.path.rootPath).test(_path)) {
         flow('监听文件');
-        chokidar.watch(process.cwd(), { ignored: config.ignor }).on('all', (event, f) => {
+        chokidar.watch(process.cwd(), {
+            ignored: config.ignor
+        }).on('all', (event, f) => {
             var _event = event;
             if (event == 'change') {
                 var arrF = f.split(path.sep);
@@ -563,7 +606,7 @@ function build() {
                     var le = _htmlcssPath.split(path.sep);
                     var aa = le.indexOf(getConfig.path.rootPath);
                     var _cssHtmlStr = le.slice([aa + 2], le.length).join(path.sep);
-                    FEDX.htmlPath(f, _cssHtmlStr)
+                    // FEDX.htmlPath(f, _cssHtmlStr)
                 }
                 var changeFile = f.split(path.sep);
                 if (new RegExp(getConfig.path.postcssPath).test(changeFile)) {
@@ -579,7 +622,6 @@ function build() {
                                 console.log(color.purple('Build') + '\t' + fe)
                             }
                             postcssBuild(fe)
-
                         }
                     })
                 }
@@ -592,9 +634,6 @@ function build() {
 build()
 
 
-
-
-
 var cwdArr = process.cwd().split(path.sep);
 var serverRoot = cwdArr.slice(0, cwdArr.indexOf(getConfig.path.rootPath) + 2).join('/');
 
@@ -604,5 +643,4 @@ bs.init({
         directory: true
     },
     open: false
-
 });
