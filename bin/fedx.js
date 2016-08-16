@@ -21,7 +21,8 @@ var program = require('commander'),
 	ipn = ip.address(),
 	atImport = require("postcss-import"),
 	os = require("os"),
-	chokidar = require('chokidar');
+	chokidar = require('chokidar'),
+	mkdir = require('mkdir-p');
 
 
 program
@@ -368,7 +369,28 @@ Fedx.prototype.str_repeat = function(str, num) {
 	return new Array(num).join(str);
 }
 
-
+function mkdirfedx(dirpath, dirname) {
+	//判断是否是第一次调用  
+	if (typeof dirname === "undefined") {
+		if (fs.existsSync(dirpath)) {
+			return;
+		} else {
+			mkdir(dirpath, path.dirname(dirpath));
+		}
+	} else {
+		//判断第二个参数是否正常，避免调用时传入错误参数  
+		if (dirname !== path.dirname(dirpath)) {
+			mkdir(dirpath);
+			return;
+		}
+		if (fs.existsSync(dirname)) {
+			fs.mkdirSync(dirpath)
+		} else {
+			mkdir(dirname, path.dirname(dirname));
+			fs.mkdirSync(dirpath);
+		}
+	}
+}
 
 // 自定义postcss插件替换路径
 Fedx.prototype.replaceImgPath = function(css) {
@@ -483,24 +505,18 @@ function postcssBuild(fe) {
 				to: path.join(_cssPath, cnn)
 			})
 			.then(function(result) {
-				if (os.platform() != "win32") {
-					fs.exists(path.join(_cssPath), function(exists, result) {
-						if (!exists) {
-							FEDX.mkdirs(path.join(_cssPath), function(err) {
-								console.log(err);
-							});
-						}
-					})
-				}
-				fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+				mkdir(_cssPath, function(err) {
+					if (err) {
+						console.log(err);
+					} else {
+						fs.writeFileSync(path.join(_cssPath, cnn), result.css);
+					}
+				});
 			}, function(error) {
 				console.log(color.red('[' + 'ERROR' + ']：'))
-				console.log(color.yellow('  ［文件］：' + error.file))
-				console.log(color.yellow('  ［位置］：第' + error.line + '行' + error.column + '列'))
-				console.log(color.yellow('  ［错误］：' + error.reason))
-				console.log()
+				console.log(color.red(error.message))
 			}).catch();
-		console.log(color.green('output') + '\t' + color.green(path.join(_cssPath, cnn)))
+		console.log(color.green('output') + '\t' + color.green(path.join(_cssPath, cnn)));
 		var leng = color.purple('output') + '\t' + path.join(_cssPath, cnn);
 		console.log(Array(leng.length - 9).join('-'))
 
@@ -574,8 +590,10 @@ function spritesOption(csspath, imgpath) {
 				var nameSlice = c[c.length - 3] + c[c.length - 2];
 				return Promise.resolve(nameSlice.replace(/icon/, ''));
 			} else {
-				var nameSlice = c[c.length - 2];
-				return Promise.resolve(nameSlice);
+				var nameSlice = c[c.length - 3];
+				var nameSlice2 = c[c.length - 2];
+				var outname = nameSlice + '.' + nameSlice2;
+				return Promise.resolve(outname.replace(/icon-/, ''));
 			}
 		},
 		filterBy: function(image) {
@@ -619,11 +637,15 @@ function build() {
 							if (fe == allFile) {
 								console.log(color.yellow(event + '\t' + fe))
 							} else {
-								console.log(color.purple('Build') + '\t' + fe)
+								if (!RegExp(/^\_/).test(path.basename(fe, '.css'))) {
+									console.log(color.blue('Build') + '\t' + color.blue(fe))
+								}
 							}
 							postcssBuild(fe)
 						}
 					})
+
+					console.log("\n\n\n");
 				}
 			}
 		})
