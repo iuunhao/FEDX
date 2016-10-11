@@ -25,6 +25,7 @@ var program = require('commander'),
   mkdir = require('mkdir-p');
 
 
+
 program
   .version(require('../package.json').version)
   .usage('[options] [Pattern type]')
@@ -654,6 +655,7 @@ function build() {
   } else {
     console.log(color.ERROR('请在' + color.red('[ ' + getConfig.path.rootPath + ' ]')) + '目录下运行命令！');
   }
+
 }
 build()
 
