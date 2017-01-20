@@ -479,13 +479,19 @@ function postcssBuild(fe) {
 			precss,
 			autoprefixer({
 				browsers: [
-					'last 9 versions'
+					'last 20 versions'
 				]
 			}),
 			sprites(spritesOption(_cssPath, _imgPath)),
 			FEDX.pxtorem,
 			FEDX.mobilepx2,
-			cssnano,
+			cssnano({
+                zindex: false,
+                autoprefixer: false,
+                core: true,
+                reduceIdents: false,
+                svgo: false
+            }),
 			FEDX.postcssMedia,
 			cssMqpacker({
 				sort: function(a, b) {
@@ -516,8 +522,8 @@ function postcssBuild(fe) {
 				console.log(color.red('[' + 'ERROR' + ']：'))
 				console.log(color.red(error.message))
 			}).catch();
-		console.log(color.green('output') + '\t' + color.green(path.join(_cssPath, cnn)));
-		var leng = color.purple('output') + '\t' + path.join(_cssPath, cnn);
+		console.log(color.green('output') + '\t' + color.green(path.join( cnn)));
+		var leng = color.purple('output') + '\t' + path.join( cnn);
 		console.log(Array(leng.length - 9).join('-'))
 
 	}
@@ -635,10 +641,10 @@ function build() {
 					rd.eachSync(path.join(watchPath), function(fe, s) {
 						if (path.extname(fe) == '.css') {
 							if (fe == allFile) {
-								console.log(color.yellow(event + '\t' + fe))
+								console.log(color.yellow(event + '\t' + path.basename(fe)))
 							} else {
 								if (!RegExp(/^\_/).test(path.basename(fe, '.css'))) {
-									console.log(color.blue('Build') + '\t' + color.blue(fe))
+									console.log(color.blue('Build') + '\t' + color.blue(path.basename(fe)))
 								}
 							}
 							postcssBuild(fe)
